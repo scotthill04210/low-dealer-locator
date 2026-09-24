@@ -1084,6 +1084,7 @@ class LOW_DL_Settings {
 				<li><a href="#low-dl-docs-locator"><?php echo esc_html__( 'Set how the locator behaves', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-place"><?php echo esc_html__( 'Place the locator on a page', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-json"><?php echo esc_html__( 'Dealer list address', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-update"><?php echo esc_html__( 'Install an update', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-remove"><?php echo esc_html__( 'Remove the plugin', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-privacy"><?php echo esc_html__( 'Map and address privacy', 'low-dealer-locator' ); ?></a></li>
@@ -1223,11 +1224,19 @@ class LOW_DL_Settings {
 			<p><?php echo esc_html__( 'Height is 200 to 1200 pixels. Zoom is 1 to 18. A missing or out-of-range value uses the Locator tab. The Dealer Locator block and the Dealer Locator widget accept the same height and zoom. Leave them blank to use the Locator tab.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></h2>
-			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A zip search marks that zip and shows a pin for each matching dealer.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'A dealer who lists the zip, checks that state, or covers the search point with a radius is shown first, under the heading for dealers who serve the area. If none do, the locator shows the nearest dealers that have coordinates. A state matches a zip search, and an address search when the lookup includes a state. Use my location matches a radius, and it does not match a state.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An address search and Use my location go straight to the nearest dealers. Use my location is available on an https page when the browser allows location. Those coordinates are sent only to this site and are not stored.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'Clicking a dealer pin opens a popup with the dealer\'s name, address, phone, email, and website. After a search, the popup also shows the distance. A phone, email, or website line appears only when that dealer has one.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An empty search or a value that is not a 5-digit zip shows a message on the page and does not look anything up. If nothing is within the maximum distance, the empty-state message is shown. The map does not zoom with the mouse wheel until the visitor clicks or focuses the map.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-json"><?php echo esc_html__( 'Dealer list address', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'Every published dealer from the post types selected on the General tab is available as JSON. Drafts and password-protected dealers are left out. A dealer with a location is included with latitude and longitude. A dealer without a location is still included, with lat and lng set to null.', 'low-dealer-locator' ); ?></p>
+			<p>
+				<a href="<?php echo esc_url( 'https://alliance360.southeastpropane.org/wp-json/low-dealer-locator/v1/dealers' ); ?>">
+					<?php echo esc_html( 'https://alliance360.southeastpropane.org/wp-json/low-dealer-locator/v1/dealers' ); ?>
+				</a>
+			</p>
 
 			<h2 id="low-dl-docs-update"><?php echo esc_html__( 'Install an update', 'low-dealer-locator' ); ?></h2>
 			<p><?php echo esc_html__( 'On the Plugins screen, choose Check for updates. WordPress installs a GitHub release when its version is newer than the copy on this site. Install from that screen. Uploading the GitHub zip through Plugins, Add New creates a second plugin folder instead of replacing this one.', 'low-dealer-locator' ); ?></p>

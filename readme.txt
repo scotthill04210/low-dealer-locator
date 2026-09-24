@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.4
+Stable tag: 0.3.5
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -12,7 +12,9 @@ Attach a service area to dealer records and show them on a map visitors can sear
 == Description ==
 
 LOW Dealer Locator attaches a service area to dealer records, publishes
-those dealers as JSON at `/wp-json/low-dealer-locator/v1/dealers`, and shows a
+those dealers as JSON at
+https://alliance360.southeastpropane.org/wp-json/low-dealer-locator/v1/dealers,
+and shows a
 map locator. A visitor can search by zip code, address, or their current
 location. A dealer who lists the zip, covers the point with a radius, or
 serves that state is shown first. If none do, the locator shows the nearest
@@ -112,7 +114,14 @@ replace the geocoder URL on the Geocoding tab.
 
 = What is the JSON format? =
 
-`GET /wp-json/low-dealer-locator/v1/dealers` returns published dealers:
+GET
+https://alliance360.southeastpropane.org/wp-json/low-dealer-locator/v1/dealers
+returns every published dealer from the selected post types. Drafts and
+password-protected dealers are left out. Dealers with a location include
+latitude and longitude. Dealers without a location are still listed, with
+`lat` and `lng` set to null.
+
+The response looks like this:
 
     {
       "dealers": [
@@ -250,6 +259,11 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.5 =
+* A zip search shows a pin for each matching dealer, along with the searched zip.
+* Use my location sits to the left of the search field.
+* Documentation includes this site's dealer JSON address.
 
 = 0.3.4 =
 * Clicking a dealer pin opens a popup with that dealer's details.

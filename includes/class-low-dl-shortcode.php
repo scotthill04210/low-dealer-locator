@@ -157,11 +157,11 @@ class LOW_DL_Shortcode {
 		$html .= ' data-i18n="' . esc_attr( $json ) . '">';
 
 		$html .= '<form class="low-dl-form" role="search">';
+		$html .= '<button type="button" class="low-dl-geo" hidden>' . esc_html( $i18n['use_location'] ) . '</button>';
 		$html .= '<label class="low-dl-sr-only" for="' . esc_attr( $input ) . '">' . esc_html__( 'Zip code or address', 'low-dealer-locator' ) . '</label>';
 		$html .= '<input type="text" id="' . esc_attr( $input ) . '" name="q" autocomplete="off" maxlength="200"';
 		$html .= ' placeholder="' . esc_attr( $i18n['search_placeholder'] ) . '" />';
 		$html .= '<button type="submit">' . esc_html( $i18n['search_button'] ) . '</button>';
-		$html .= '<button type="button" class="low-dl-geo" hidden>' . esc_html( $i18n['use_location'] ) . '</button>';
 		$html .= '</form>';
 
 		$html .= '<div class="low-dl-message" role="status" aria-live="polite"></div>';

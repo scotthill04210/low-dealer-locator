@@ -830,11 +830,45 @@ class LOW_DL_REST {
 		unset( $dealer['zip_codes'], $dealer['service_radius'], $dealer['service_states'] );
 
 		$dealer['id']       = isset( $dealer['id'] ) ? (int) $dealer['id'] : 0;
-		$dealer['lat']      = self::coord_or_null( isset( $dealer['lat'] ) ? $dealer['lat'] : null );
-		$dealer['lng']      = self::coord_or_null( isset( $dealer['lng'] ) ? $dealer['lng'] : null );
+		$point              = self::map_point_for_dealer( $dealer );
+		$dealer['lat']      = is_array( $point ) ? $point[0] : null;
+		$dealer['lng']      = is_array( $point ) ? $point[1] : null;
 		$dealer['distance'] = ( null === $distance ) ? null : (float) $distance;
 
 		return $dealer;
+	}
+
+	/**
+	 * Pin location: saved coordinates, or the centroid of the dealer's own ZIP.
+	 *
+	 * @param array $dealer Cached dealer.
+	 * @return array{0: float, 1: float}|null
+	 */
+	private static function map_point_for_dealer( array $dealer ) {
+		$lat = self::coord_or_null( isset( $dealer['lat'] ) ? $dealer['lat'] : null );
+		$lng = self::coord_or_null( isset( $dealer['lng'] ) ? $dealer['lng'] : null );
+
+		if ( null !== $lat && null !== $lng ) {
+			return array( $lat, $lng );
+		}
+
+		$zip = '';
+
+		if ( isset( $dealer['address'] ) && is_array( $dealer['address'] ) && isset( $dealer['address']['zip'] ) && is_scalar( $dealer['address']['zip'] ) ) {
+			$zip = (string) $dealer['address']['zip'];
+		}
+
+		if ( 1 !== preg_match( '/^(\d{5})/', $zip, $matches ) ) {
+			return null;
+		}
+
+		$origin = self::centroid_origin( $matches[1] );
+
+		if ( ! is_array( $origin ) ) {
+			return null;
+		}
+
+		return array( (float) $origin['lat'], (float) $origin['lng'] );
 	}
 
 	/**

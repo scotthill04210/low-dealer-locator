@@ -320,13 +320,17 @@
 			}
 
 			var origin = pointOf(data ? data.origin : null);
+			var occupied = {};
 
 			if (origin) {
 				markers.addLayer(window.L.marker(origin, {
 					icon: originIcon,
-					keyboard: false
+					keyboard: false,
+					interactive: false,
+					zIndexOffset: -100
 				}));
 				points.push(origin);
+				rememberPoint(occupied, origin);
 			}
 
 			for (index = 0; index < dealers.length; index++) {
@@ -335,6 +339,7 @@
 				var marker = null;
 
 				if (point) {
+					point = separatePoint(point, occupied);
 					marker = addDealerMarker(dealer, point, unit);
 					points.push(point);
 				}
@@ -430,6 +435,31 @@
 
 			map.setView(point, Math.max(12, map.getZoom()));
 			marker.openPopup();
+		}
+
+		function rememberPoint(occupied, point) {
+			var key = point[0].toFixed(4) + ',' + point[1].toFixed(4);
+			occupied[key] = (occupied[key] || 0) + 1;
+			return key;
+		}
+
+		function separatePoint(point, occupied) {
+			var key = point[0].toFixed(4) + ',' + point[1].toFixed(4);
+			var count = occupied[key] || 0;
+
+			occupied[key] = count + 1;
+
+			if (count === 0) {
+				return point;
+			}
+
+			var angle = count * 0.9;
+			var radius = 0.02 * (1 + Math.floor((count - 1) / 8));
+
+			return [
+				point[0] + (Math.sin(angle) * radius),
+				point[1] + (Math.cos(angle) * radius)
+			];
 		}
 
 		function fitInitial(points) {

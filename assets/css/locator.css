@@ -47,6 +47,11 @@
 	flex: 0 0 auto;
 }
 
+.low-dl-locator .low-dl-form .low-dl-geo {
+	order: -1;
+	white-space: nowrap;
+}
+
 .low-dl-locator input[type="text"],
 .low-dl-locator button {
 	font: inherit;
