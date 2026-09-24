@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -125,6 +125,14 @@ zoom, from 1 to 18. Leave either one out, or pass a value outside that range,
 and the locator uses the map height and default zoom from the Locator tab.
 The Dealer Locator block and widget accept the same two values.
 
+= How do plugin updates work? =
+
+On the Plugins screen, choose Check for updates. WordPress installs a GitHub
+release only when its version is newer than the installed plugin. Publish the
+release with a tag such as v0.3.1. Do not upload that GitHub zip through
+Plugins, Add New. WordPress would place it in a second folder named after the
+tag instead of replacing this plugin.
+
 = How do I stop the plugin from deleting data? =
 
 On the General tab, "Delete all plugin data when the plugin is deleted" is
@@ -217,6 +225,9 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.1 =
+* Readme explains how Check for updates installs a newer GitHub release.
 
 = 0.3.0 =
 * Initial release.
