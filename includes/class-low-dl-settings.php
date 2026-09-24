@@ -37,6 +37,7 @@ class LOW_DL_Settings {
 		'empty_text',
 		'map_height',
 		'marker_color',
+		'searched_marker_color',
 		'default_zoom',
 		'tile_url',
 		'tile_attribution',
@@ -78,6 +79,7 @@ class LOW_DL_Settings {
 			'empty_text'               => '',
 			'map_height'               => 450,
 			'marker_color'             => '#d9480f',
+			'searched_marker_color'    => '#1c7ed6',
 			'default_zoom'             => 4,
 			'tile_url'                 => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 			'tile_attribution'         => '',
@@ -160,6 +162,29 @@ class LOW_DL_Settings {
 		$settings = self::get_all();
 
 		return array_key_exists( $key, $settings ) ? $settings[ $key ] : null;
+	}
+
+	/**
+	 * A saved hex color expanded for a color input, or the fallback.
+	 *
+	 * @param string $key      Setting key.
+	 * @param string $fallback Six-digit hex color.
+	 * @return string
+	 */
+	private static function color_for_input( $key, $fallback ) {
+		$color = self::get( $key );
+
+		if ( ! is_string( $color ) || 1 !== preg_match( '/^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/', $color ) ) {
+			return $fallback;
+		}
+
+		$color = strtolower( $color );
+
+		if ( 4 === strlen( $color ) ) {
+			$color = sprintf( '#%1$s%1$s%2$s%2$s%3$s%3$s', $color[1], $color[2], $color[3] );
+		}
+
+		return $color;
 	}
 
 	/**
@@ -472,9 +497,10 @@ class LOW_DL_Settings {
 			}
 		}
 
-		$clean['map_height']       = $height;
-		$clean['marker_color']     = $this->sanitize_marker_color( isset( $input['marker_color'] ) ? $input['marker_color'] : '' );
-		$clean['default_zoom']     = $zoom;
+		$clean['map_height']            = $height;
+		$clean['marker_color']          = $this->sanitize_hex_color( isset( $input['marker_color'] ) ? $input['marker_color'] : '', '#d9480f' );
+		$clean['searched_marker_color'] = $this->sanitize_hex_color( isset( $input['searched_marker_color'] ) ? $input['searched_marker_color'] : '', '#1c7ed6' );
+		$clean['default_zoom']          = $zoom;
 		$clean['tile_url']         = $this->sanitize_tile_url( isset( $input['tile_url'] ) ? $input['tile_url'] : '' );
 		$clean['tile_attribution'] = $this->limit_locator_text( isset( $input['tile_attribution'] ) ? $input['tile_attribution'] : '' );
 
@@ -482,13 +508,13 @@ class LOW_DL_Settings {
 	}
 
 	/**
-	 * Hex color, or the default marker color.
+	 * Hex color, or the given default.
 	 *
-	 * @param mixed $value Posted color.
+	 * @param mixed  $value   Posted color.
+	 * @param string $default Fallback hex color.
 	 * @return string
 	 */
-	private function sanitize_marker_color( $value ) {
-		$default = (string) self::defaults()['marker_color'];
+	private function sanitize_hex_color( $value, $default ) {
 
 		if ( ! is_scalar( $value ) ) {
 			return $default;
@@ -861,7 +887,8 @@ class LOW_DL_Settings {
 
 		$map_height = self::get( 'map_height' );
 		$zoom       = self::get( 'default_zoom' );
-		$color      = self::get( 'marker_color' );
+		$color      = self::color_for_input( 'marker_color', '#d9480f' );
+		$searched   = self::color_for_input( 'searched_marker_color', '#1c7ed6' );
 		$tile_url   = self::get( 'tile_url' );
 		$credit     = self::get( 'tile_attribution' );
 		$tile_default = (string) self::defaults()['tile_url'];
@@ -872,16 +899,6 @@ class LOW_DL_Settings {
 
 		if ( ! is_numeric( $zoom ) ) {
 			$zoom = 4;
-		}
-
-		if ( ! is_string( $color ) || 1 !== preg_match( '/^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/', $color ) ) {
-			$color = '#d9480f';
-		}
-
-		$color = strtolower( $color );
-
-		if ( 4 === strlen( $color ) ) {
-			$color = sprintf( '#%1$s%1$s%2$s%2$s%3$s%3$s', $color[1], $color[2], $color[3] );
 		}
 
 		if ( ! is_string( $tile_url ) || '' === $tile_url ) {
@@ -1001,6 +1018,21 @@ class LOW_DL_Settings {
 						name="<?php echo esc_attr( $name ); ?>[marker_color]"
 						value="<?php echo esc_attr( $color ); ?>"
 					/>
+					<p class="description"><?php echo esc_html__( 'Dealer pins.', 'low-dealer-locator' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="low-dl-searched-marker-color"><?php echo esc_html__( 'Searched marker color', 'low-dealer-locator' ); ?></label>
+				</th>
+				<td>
+					<input
+						type="color"
+						id="low-dl-searched-marker-color"
+						name="<?php echo esc_attr( $name ); ?>[searched_marker_color]"
+						value="<?php echo esc_attr( $searched ); ?>"
+					/>
+					<p class="description"><?php echo esc_html__( 'The zip, address, or location that was searched. Hover or click that marker to see Searched location.', 'low-dealer-locator' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -1209,7 +1241,8 @@ class LOW_DL_Settings {
 				<li><?php echo esc_html__( 'Distance unit: miles or kilometers.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Headings and the empty-state message. A blank field uses the placeholder text.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map height in pixels, from 200 to 1200. The default is 450.', 'low-dealer-locator' ); ?></li>
-				<li><?php echo esc_html__( 'Marker color.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Marker color for dealer pins.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Searched marker color. The default is blue. Hover or click that marker to see Searched location.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Default zoom, from 1 to 18. The default is 4.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map tile URL. The default is OpenStreetMap and must include {z}, {x}, and {y}. Public OpenStreetMap tiles are for light use.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Extra map attribution is added after © OpenStreetMap contributors.', 'low-dealer-locator' ); ?></li>
@@ -1224,14 +1257,14 @@ class LOW_DL_Settings {
 			<p><?php echo esc_html__( 'Height is 200 to 1200 pixels. Zoom is 1 to 18. A missing or out-of-range value uses the Locator tab. The Dealer Locator block and the Dealer Locator widget accept the same height and zoom. Leave them blank to use the Locator tab.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></h2>
-			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A zip search marks that zip and shows a pin for each matching dealer.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A search marks that place and shows a pin for each matching dealer. Hover or click the searched marker to see Searched location.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'A dealer who lists the zip, checks that state, or covers the search point with a radius is shown first, under the heading for dealers who serve the area. If none do, the locator shows the nearest dealers that have coordinates. A state matches a zip search, and an address search when the lookup includes a state. Use my location matches a radius, and it does not match a state.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An address search and Use my location go straight to the nearest dealers. Use my location is available on an https page when the browser allows location. Those coordinates are sent only to this site and are not stored.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'Clicking a dealer pin opens a popup with the dealer\'s name, address, phone, email, and website. After a search, the popup also shows the distance. A phone, email, or website line appears only when that dealer has one.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An empty search or a value that is not a 5-digit zip shows a message on the page and does not look anything up. If nothing is within the maximum distance, the empty-state message is shown. The map does not zoom with the mouse wheel until the visitor clicks or focuses the map.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-json"><?php echo esc_html__( 'Dealer list address', 'low-dealer-locator' ); ?></h2>
-			<p><?php echo esc_html__( 'Every published dealer from the post types selected on the General tab is available as JSON. Drafts and password-protected dealers are left out. A dealer with a location is included with latitude and longitude. A dealer without a location is still included, with lat and lng set to null.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'This address lists published dealers that have a service location: coordinates, an address ZIP, zip codes, a radius, or at least one state. A dealer with only a name is left out. Drafts and password-protected dealers are left out too.', 'low-dealer-locator' ); ?></p>
 			<p>
 				<a href="<?php echo esc_url( 'https://alliance360.southeastpropane.org/wp-json/low-dealer-locator/v1/dealers' ); ?>">
 					<?php echo esc_html( 'https://alliance360.southeastpropane.org/wp-json/low-dealer-locator/v1/dealers' ); ?>

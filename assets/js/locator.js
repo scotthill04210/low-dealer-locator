@@ -21,7 +21,8 @@
 		website: 'Website',
 		email: 'Email',
 		view_on_map: 'View on map',
-		map_label: 'Dealer map'
+		map_label: 'Dealer map',
+		searched_location: 'Searched location'
 	};
 
 	function boot() {
@@ -323,12 +324,24 @@
 			var occupied = {};
 
 			if (origin) {
-				markers.addLayer(window.L.marker(origin, {
+				var searched = window.L.marker(origin, {
 					icon: originIcon,
-					keyboard: false,
-					interactive: false,
+					keyboard: true,
+					alt: text('searched_location'),
 					zIndexOffset: -100
-				}));
+				});
+				var label = text('searched_location');
+
+				searched.bindTooltip(labelNode(label), {
+					direction: 'top',
+					offset: [0, -8],
+					opacity: 1
+				});
+				searched.bindPopup(labelNode(label), {
+					closeButton: false,
+					minWidth: 40
+				});
+				markers.addLayer(searched);
 				points.push(origin);
 				rememberPoint(occupied, origin);
 			}
@@ -526,6 +539,14 @@
 			var label = unit === 'km' ? text('unit_km') : text('unit_mi');
 
 			return fill(text('distance_away'), number.toFixed(1) + ' ' + label);
+		}
+
+		function labelNode(label) {
+			var node = document.createElement('span');
+
+			node.textContent = label;
+
+			return node;
 		}
 
 		function popupNode(dealer, unit) {

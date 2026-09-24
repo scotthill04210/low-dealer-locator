@@ -148,7 +148,7 @@ class LOW_DL_REST {
 	}
 
 	/**
-	 * Published dealers, from the transient unless a rebuild is forced.
+	 * Published dealers that have a service location, from the transient unless a rebuild is forced.
 	 *
 	 * @param bool $force Skip the transient and rebuild.
 	 * @return array
@@ -201,19 +201,25 @@ class LOW_DL_REST {
 				continue;
 			}
 
-			$dealers[] = array(
-				'id'        => (int) $row['id'],
-				'name'      => $row['name'],
-				'email'     => $row['email'],
-				'website'   => $row['website'],
-				'phone'     => $row['phone'],
-				'address'   => $row['address'],
-				'lat'       => $row['lat'],
-				'lng'       => $row['lng'],
+			$dealer = array(
+				'id'              => (int) $row['id'],
+				'name'            => $row['name'],
+				'email'           => $row['email'],
+				'website'         => $row['website'],
+				'phone'           => $row['phone'],
+				'address'         => $row['address'],
+				'lat'             => $row['lat'],
+				'lng'             => $row['lng'],
 				'zip_codes'       => array_values( LOW_DL_Zip_Manager::get_zips( $id ) ),
 				'service_radius' => LOW_DL_Zip_Manager::get_radius_miles( $id ),
 				'service_states' => LOW_DL_Zip_Manager::get_states( $id ),
 			);
+
+			if ( ! self::dealer_has_service_location( $dealer ) ) {
+				continue;
+			}
+
+			$dealers[] = $dealer;
 		}
 
 		$dealers = apply_filters( 'low_dl_dealers_data', $dealers );
@@ -231,6 +237,40 @@ class LOW_DL_REST {
 		);
 
 		return $dealers;
+	}
+
+	/**
+	 * Whether this dealer can be pinned or matched.
+	 *
+	 * A name alone is not enough. The dealer needs coordinates, an address ZIP,
+	 * a zip list, a radius, or at least one state.
+	 *
+	 * @param array $dealer Dealer row.
+	 * @return bool
+	 */
+	private static function dealer_has_service_location( array $dealer ) {
+		$lat = self::coord_or_null( isset( $dealer['lat'] ) ? $dealer['lat'] : null );
+		$lng = self::coord_or_null( isset( $dealer['lng'] ) ? $dealer['lng'] : null );
+
+		if ( null !== $lat && null !== $lng ) {
+			return true;
+		}
+
+		if ( ! empty( $dealer['zip_codes'] ) || ! empty( $dealer['service_states'] ) ) {
+			return true;
+		}
+
+		if ( isset( $dealer['service_radius'] ) && is_numeric( $dealer['service_radius'] ) && (float) $dealer['service_radius'] > 0 ) {
+			return true;
+		}
+
+		$zip = '';
+
+		if ( isset( $dealer['address'] ) && is_array( $dealer['address'] ) && isset( $dealer['address']['zip'] ) && is_scalar( $dealer['address']['zip'] ) ) {
+			$zip = (string) $dealer['address']['zip'];
+		}
+
+		return 1 === preg_match( '/^\d{5}/', $zip );
 	}
 
 	/**

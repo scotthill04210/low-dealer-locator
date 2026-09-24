@@ -173,9 +173,9 @@
 	height: 16px;
 	margin: 4px;
 	border-radius: 50%;
-	background: #1c7ed6;
+	background: var(--low-dl-searched, #1c7ed6);
 	border: 3px solid #fff;
-	box-shadow: 0 0 0 2px #1c7ed6;
+	box-shadow: 0 0 0 2px var(--low-dl-searched, #1c7ed6);
 }
 
 .low-dl-locator .low-dl-dealer a {

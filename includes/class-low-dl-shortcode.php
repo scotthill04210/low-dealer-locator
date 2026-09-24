@@ -131,19 +131,20 @@ class LOW_DL_Shortcode {
 
 		++self::$count;
 
-		$id    = 'low-dl-locator-' . self::$count;
-		$input = 'low-dl-q-' . self::$count;
-		$color = self::marker_color( $settings );
-		$unit  = ( isset( $settings['distance_unit'] ) && 'km' === $settings['distance_unit'] ) ? 'km' : 'mi';
-		$tile  = self::tile_url( $settings );
-		$i18n  = self::i18n_strings();
-		$json  = wp_json_encode( $i18n );
+		$id       = 'low-dl-locator-' . self::$count;
+		$input    = 'low-dl-q-' . self::$count;
+		$color    = self::hex_color( $settings, 'marker_color', '#d9480f' );
+		$searched = self::hex_color( $settings, 'searched_marker_color', '#1c7ed6' );
+		$unit     = ( isset( $settings['distance_unit'] ) && 'km' === $settings['distance_unit'] ) ? 'km' : 'mi';
+		$tile     = self::tile_url( $settings );
+		$i18n     = self::i18n_strings();
+		$json     = wp_json_encode( $i18n );
 
 		if ( ! is_string( $json ) ) {
 			$json = '{}';
 		}
 
-		$style = '--low-dl-map-height:' . (int) $height . 'px;--low-dl-marker:' . $color;
+		$style = '--low-dl-map-height:' . (int) $height . 'px;--low-dl-marker:' . $color . ';--low-dl-searched:' . $searched;
 
 		$html  = '<div id="' . esc_attr( $id ) . '" class="low-dl-locator"';
 		$html .= ' style="' . esc_attr( $style ) . '"';
@@ -265,16 +266,18 @@ class LOW_DL_Shortcode {
 	}
 
 	/**
-	 * Sanitized marker color.
+	 * A saved hex color, or the fallback.
 	 *
-	 * @param array $settings Saved settings.
+	 * @param array  $settings Saved settings.
+	 * @param string $key      Setting key.
+	 * @param string $fallback Six-digit hex color.
 	 * @return string
 	 */
-	private static function marker_color( $settings ) {
-		$color = isset( $settings['marker_color'] ) ? $settings['marker_color'] : '';
+	private static function hex_color( $settings, $key, $fallback ) {
+		$color = isset( $settings[ $key ] ) ? $settings[ $key ] : '';
 
 		if ( ! is_string( $color ) || 1 !== preg_match( '/^#([a-fA-F0-9]{3}){1,2}$/', $color ) ) {
-			return '#d9480f';
+			return $fallback;
 		}
 
 		return strtolower( $color );
@@ -353,6 +356,7 @@ class LOW_DL_Shortcode {
 			'email'               => __( 'Email', 'low-dealer-locator' ),
 			'view_on_map'         => __( 'View on map', 'low-dealer-locator' ),
 			'map_label'           => __( 'Dealer map', 'low-dealer-locator' ),
+			'searched_location'   => __( 'Searched location', 'low-dealer-locator' ),
 		);
 	}
 }
