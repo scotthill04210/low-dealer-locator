@@ -191,6 +191,16 @@
 	color: inherit;
 }
 
+.low-dl-locator .leaflet-popup-content p,
+.low-dl-locator .low-dl-popup p {
+	margin: 0.25em 0 0;
+}
+
+.low-dl-locator .low-dl-popup a {
+	color: inherit;
+	overflow-wrap: anywhere;
+}
+
 @media (min-width: 720px) {
 	.low-dl-locator .low-dl-body {
 		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);

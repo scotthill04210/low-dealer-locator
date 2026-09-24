@@ -335,7 +335,7 @@
 				var marker = null;
 
 				if (point) {
-					marker = addDealerMarker(dealer, point);
+					marker = addDealerMarker(dealer, point, unit);
 					points.push(point);
 				}
 
@@ -356,12 +356,15 @@
 			map.invalidateSize();
 		}
 
-		function addDealerMarker(dealer, point) {
+		function addDealerMarker(dealer, point, unit) {
 			var marker = window.L.marker(point, {
 				icon: dealerIcon
 			});
 
-			marker.bindPopup(popupNode(dealer));
+			marker.bindPopup(popupNode(dealer, unit), {
+				minWidth: 180,
+				maxWidth: 280
+			});
 			markers.addLayer(marker);
 
 			return marker;
@@ -495,7 +498,7 @@
 			return fill(text('distance_away'), number.toFixed(1) + ' ' + label);
 		}
 
-		function popupNode(dealer) {
+		function popupNode(dealer, unit) {
 			var node = document.createElement('div');
 			var name = document.createElement('strong');
 
@@ -503,6 +506,16 @@
 			name.textContent = asText(dealer && dealer.name);
 			node.appendChild(name);
 			appendAddress(node, dealer && dealer.address);
+
+			if (dealer && dealer.distance !== null && dealer.distance !== undefined && dealer.distance !== '') {
+				var distance = document.createElement('p');
+				distance.textContent = formatDistance(dealer.distance, unit);
+				node.appendChild(distance);
+			}
+
+			appendPhone(node, dealer && dealer.phone);
+			appendEmail(node, dealer && dealer.email);
+			appendWebsite(node, dealer && dealer.website);
 
 			return node;
 		}
