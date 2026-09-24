@@ -36,7 +36,9 @@ class LOW_DL_Settings {
 		'heading_nearest',
 		'empty_text',
 		'map_height',
+		'marker_style',
 		'marker_color',
+		'marker_image_id',
 		'searched_marker_color',
 		'default_zoom',
 		'tile_url',
@@ -78,7 +80,9 @@ class LOW_DL_Settings {
 			'heading_nearest'          => '',
 			'empty_text'               => '',
 			'map_height'               => 450,
+			'marker_style'             => 'circle',
 			'marker_color'             => '#d9480f',
+			'marker_image_id'          => 0,
 			'searched_marker_color'    => '#1c7ed6',
 			'default_zoom'             => 4,
 			'tile_url'                 => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -498,13 +502,55 @@ class LOW_DL_Settings {
 		}
 
 		$clean['map_height']            = $height;
+		$clean['marker_style']          = $this->sanitize_marker_style( isset( $input['marker_style'] ) ? $input['marker_style'] : '' );
 		$clean['marker_color']          = $this->sanitize_hex_color( isset( $input['marker_color'] ) ? $input['marker_color'] : '', '#d9480f' );
+		$clean['marker_image_id']       = $this->sanitize_marker_image_id( isset( $input['marker_image_id'] ) ? $input['marker_image_id'] : 0 );
 		$clean['searched_marker_color'] = $this->sanitize_hex_color( isset( $input['searched_marker_color'] ) ? $input['searched_marker_color'] : '', '#1c7ed6' );
 		$clean['default_zoom']          = $zoom;
 		$clean['tile_url']         = $this->sanitize_tile_url( isset( $input['tile_url'] ) ? $input['tile_url'] : '' );
 		$clean['tile_attribution'] = $this->limit_locator_text( isset( $input['tile_attribution'] ) ? $input['tile_attribution'] : '' );
 
 		return $clean;
+	}
+
+	/**
+	 * Dealer marker choice: circle, the bundled map pin, or an uploaded image.
+	 *
+	 * @param mixed $value Posted style.
+	 * @return string
+	 */
+	private function sanitize_marker_style( $value ) {
+		$style = 'circle';
+
+		if ( is_scalar( $value ) ) {
+			$style = sanitize_key( wp_unslash( (string) $value ) );
+		}
+
+		if ( ! in_array( $style, array( 'circle', 'pin', 'image' ), true ) ) {
+			return 'circle';
+		}
+
+		return $style;
+	}
+
+	/**
+	 * Attachment ID for an uploaded dealer marker, or 0.
+	 *
+	 * @param mixed $value Posted attachment ID.
+	 * @return int
+	 */
+	private function sanitize_marker_image_id( $value ) {
+		$id = 0;
+
+		if ( is_scalar( $value ) && is_numeric( wp_unslash( (string) $value ) ) ) {
+			$id = absint( $value );
+		}
+
+		if ( $id < 1 || ! wp_attachment_is_image( $id ) ) {
+			return 0;
+		}
+
+		return $id;
 	}
 
 	/**
@@ -887,8 +933,23 @@ class LOW_DL_Settings {
 
 		$map_height = self::get( 'map_height' );
 		$zoom       = self::get( 'default_zoom' );
-		$color      = self::color_for_input( 'marker_color', '#d9480f' );
-		$searched   = self::color_for_input( 'searched_marker_color', '#1c7ed6' );
+		$color        = self::color_for_input( 'marker_color', '#d9480f' );
+		$searched     = self::color_for_input( 'searched_marker_color', '#1c7ed6' );
+		$marker_style = self::get( 'marker_style' );
+		$image_id     = absint( self::get( 'marker_image_id' ) );
+		$preview      = '';
+
+		if ( ! is_string( $marker_style ) || ! in_array( $marker_style, array( 'circle', 'pin', 'image' ), true ) ) {
+			$marker_style = 'circle';
+		}
+
+		if ( $image_id > 0 && wp_attachment_is_image( $image_id ) ) {
+			$preview_url = wp_get_attachment_image_url( $image_id, 'thumbnail' );
+
+			if ( is_string( $preview_url ) ) {
+				$preview = $preview_url;
+			}
+		}
 		$tile_url   = self::get( 'tile_url' );
 		$credit     = self::get( 'tile_attribution' );
 		$tile_default = (string) self::defaults()['tile_url'];
@@ -1009,6 +1070,19 @@ class LOW_DL_Settings {
 			</tr>
 			<tr>
 				<th scope="row">
+					<label for="low-dl-marker-style"><?php echo esc_html__( 'Dealer marker', 'low-dealer-locator' ); ?></label>
+				</th>
+				<td>
+					<select id="low-dl-marker-style" name="<?php echo esc_attr( $name ); ?>[marker_style]">
+						<option value="circle" <?php selected( $marker_style, 'circle' ); ?>><?php echo esc_html__( 'Circle', 'low-dealer-locator' ); ?></option>
+						<option value="pin" <?php selected( $marker_style, 'pin' ); ?>><?php echo esc_html__( 'Map pin', 'low-dealer-locator' ); ?></option>
+						<option value="image" <?php selected( $marker_style, 'image' ); ?>><?php echo esc_html__( 'Uploaded image', 'low-dealer-locator' ); ?></option>
+					</select>
+					<p class="description"><?php echo esc_html__( 'Circle uses Marker color. Map pin is the standard pin included with the map. OpenStreetMap does not publish other marker icons. Uploaded image uses one image for every dealer pin.', 'low-dealer-locator' ); ?></p>
+				</td>
+			</tr>
+			<tr id="low-dl-marker-color-row"<?php echo ( 'circle' === $marker_style ) ? '' : ' hidden="hidden"'; ?>>
+				<th scope="row">
 					<label for="low-dl-marker-color"><?php echo esc_html__( 'Marker color', 'low-dealer-locator' ); ?></label>
 				</th>
 				<td>
@@ -1018,7 +1092,33 @@ class LOW_DL_Settings {
 						name="<?php echo esc_attr( $name ); ?>[marker_color]"
 						value="<?php echo esc_attr( $color ); ?>"
 					/>
-					<p class="description"><?php echo esc_html__( 'Dealer pins.', 'low-dealer-locator' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'Used when the dealer marker is a circle.', 'low-dealer-locator' ); ?></p>
+				</td>
+			</tr>
+			<tr id="low-dl-marker-image-row"<?php echo ( 'image' === $marker_style ) ? '' : ' hidden="hidden"'; ?>>
+				<th scope="row">
+					<label for="low-dl-marker-image-select"><?php echo esc_html__( 'Dealer marker image', 'low-dealer-locator' ); ?></label>
+				</th>
+				<td>
+					<input type="hidden" id="low-dl-marker-image-id" name="<?php echo esc_attr( $name ); ?>[marker_image_id]" value="<?php echo esc_attr( (string) $image_id ); ?>" />
+					<img
+						id="low-dl-marker-image-preview"
+						alt="<?php echo esc_attr__( 'Dealer marker preview', 'low-dealer-locator' ); ?>"
+						<?php if ( '' !== $preview ) : ?>
+							src="<?php echo esc_url( $preview ); ?>"
+						<?php else : ?>
+							hidden="hidden"
+						<?php endif; ?>
+					/>
+					<button
+						type="button"
+						class="button"
+						id="low-dl-marker-image-select"
+						data-title="<?php echo esc_attr__( 'Dealer marker', 'low-dealer-locator' ); ?>"
+						data-button="<?php echo esc_attr__( 'Use this image', 'low-dealer-locator' ); ?>"
+					><?php echo esc_html__( 'Select image', 'low-dealer-locator' ); ?></button>
+					<button type="button" class="button" id="low-dl-marker-image-remove"<?php echo ( '' === $preview ) ? ' hidden="hidden"' : ''; ?>><?php echo esc_html__( 'Remove image', 'low-dealer-locator' ); ?></button>
+					<p class="description"><?php echo esc_html__( 'A PNG with a transparent background works best. The bottom center of the image sits on the dealer. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -1241,7 +1341,7 @@ class LOW_DL_Settings {
 				<li><?php echo esc_html__( 'Distance unit: miles or kilometers.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Headings and the empty-state message. A blank field uses the placeholder text.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map height in pixels, from 200 to 1200. The default is 450.', 'low-dealer-locator' ); ?></li>
-				<li><?php echo esc_html__( 'Marker color for dealer pins.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Dealer marker: a colored circle, the standard map pin, or one uploaded image. OpenStreetMap does not publish other marker icons. Marker color applies to the circle. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Searched marker color. The default is blue. Hover or click that marker to see Searched location.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Default zoom, from 1 to 18. The default is 4.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map tile URL. The default is OpenStreetMap and must include {z}, {x}, and {y}. Public OpenStreetMap tiles are for light use.', 'low-dealer-locator' ); ?></li>
@@ -1324,10 +1424,17 @@ class LOW_DL_Settings {
 			LOW_DL_VERSION
 		);
 
+		$script_deps = array();
+
+		if ( 'locator' === $this->get_current_tab() ) {
+			wp_enqueue_media();
+			$script_deps[] = 'media-editor';
+		}
+
 		wp_enqueue_script(
 			'low-dl-admin',
 			LOW_DL_URL . 'assets/js/admin.js',
-			array(),
+			$script_deps,
 			LOW_DL_VERSION,
 			true
 		);

@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.6
+Stable tag: 0.3.7
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -33,6 +33,8 @@ dealers by distance.
 * Place the locator with a shortcode, a block, or a widget.
 * Click a dealer pin to open that dealer's name, address, phone, email, and
   website. Distance is included after a search.
+* Dealer pins can be a colored circle, the standard map pin, or one uploaded
+  image. OpenStreetMap does not publish other marker icons.
 * Hover or click the searched marker to see Searched location. Its color is
   set separately from the dealer pin color.
 * Draw the map with the bundled Leaflet library and a configurable tile URL.
@@ -261,6 +263,10 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.7 =
+* Dealer pins can be a colored circle, the standard map pin, or one uploaded image.
+* OpenStreetMap does not publish other marker icons.
 
 = 0.3.6 =
 * The public dealer list includes only dealers that have a service location.

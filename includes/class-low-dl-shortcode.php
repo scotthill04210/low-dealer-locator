@@ -131,14 +131,17 @@ class LOW_DL_Shortcode {
 
 		++self::$count;
 
-		$id       = 'low-dl-locator-' . self::$count;
-		$input    = 'low-dl-q-' . self::$count;
-		$color    = self::hex_color( $settings, 'marker_color', '#d9480f' );
-		$searched = self::hex_color( $settings, 'searched_marker_color', '#1c7ed6' );
-		$unit     = ( isset( $settings['distance_unit'] ) && 'km' === $settings['distance_unit'] ) ? 'km' : 'mi';
-		$tile     = self::tile_url( $settings );
-		$i18n     = self::i18n_strings();
-		$json     = wp_json_encode( $i18n );
+		$id           = 'low-dl-locator-' . self::$count;
+		$input        = 'low-dl-q-' . self::$count;
+		$color        = self::hex_color( $settings, 'marker_color', '#d9480f' );
+		$searched     = self::hex_color( $settings, 'searched_marker_color', '#1c7ed6' );
+		$marker_style = self::marker_style( $settings );
+		$marker_image = self::marker_image( $settings );
+		$pin_base     = trailingslashit( LOW_DL_URL . 'assets/vendor/leaflet/images' );
+		$unit         = ( isset( $settings['distance_unit'] ) && 'km' === $settings['distance_unit'] ) ? 'km' : 'mi';
+		$tile         = self::tile_url( $settings );
+		$i18n         = self::i18n_strings();
+		$json         = wp_json_encode( $i18n );
 
 		if ( ! is_string( $json ) ) {
 			$json = '{}';
@@ -155,6 +158,13 @@ class LOW_DL_Shortcode {
 		// esc_attr keeps {z} {x} {y}. esc_url would strip the braces.
 		$html .= ' data-tile-url="' . esc_attr( $tile ) . '"';
 		$html .= ' data-attribution="' . esc_attr( self::attribution( $settings ) ) . '"';
+		$html .= ' data-marker-style="' . esc_attr( $marker_style ) . '"';
+		$html .= ' data-marker-image="' . esc_url( $marker_image['url'] ) . '"';
+		$html .= ' data-marker-image-width="' . esc_attr( (string) $marker_image['width'] ) . '"';
+		$html .= ' data-marker-image-height="' . esc_attr( (string) $marker_image['height'] ) . '"';
+		$html .= ' data-pin-icon="' . esc_url( $pin_base . 'marker-icon.png' ) . '"';
+		$html .= ' data-pin-icon-2x="' . esc_url( $pin_base . 'marker-icon-2x.png' ) . '"';
+		$html .= ' data-pin-shadow="' . esc_url( $pin_base . 'marker-shadow.png' ) . '"';
 		$html .= ' data-i18n="' . esc_attr( $json ) . '">';
 
 		$html .= '<form class="low-dl-form" role="search">';
@@ -263,6 +273,69 @@ class LOW_DL_Shortcode {
 		}
 
 		return $zoom;
+	}
+
+	/**
+	 * Dealer marker style.
+	 *
+	 * @param array $settings Saved settings.
+	 * @return string
+	 */
+	private static function marker_style( $settings ) {
+		$style = isset( $settings['marker_style'] ) ? $settings['marker_style'] : 'circle';
+
+		if ( ! is_string( $style ) || ! in_array( $style, array( 'circle', 'pin', 'image' ), true ) ) {
+			return 'circle';
+		}
+
+		return $style;
+	}
+
+	/**
+	 * Uploaded dealer marker, scaled so the long side is at most 48 pixels.
+	 *
+	 * @param array $settings Saved settings.
+	 * @return array{url: string, width: int, height: int}
+	 */
+	private static function marker_image( $settings ) {
+		$empty = array(
+			'url'    => '',
+			'width'  => 0,
+			'height' => 0,
+		);
+		$id    = isset( $settings['marker_image_id'] ) ? absint( $settings['marker_image_id'] ) : 0;
+
+		if ( $id < 1 || ! wp_attachment_is_image( $id ) ) {
+			return $empty;
+		}
+
+		$src = wp_get_attachment_image_src( $id, 'full' );
+
+		if ( ! is_array( $src ) || empty( $src[0] ) || ! is_string( $src[0] ) ) {
+			return $empty;
+		}
+
+		$width  = isset( $src[1] ) ? (int) $src[1] : 0;
+		$height = isset( $src[2] ) ? (int) $src[2] : 0;
+
+		if ( $width < 1 || $height < 1 ) {
+			$width  = 32;
+			$height = 32;
+		}
+
+		$longest = max( $width, $height );
+
+		if ( $longest > 48 ) {
+			$scale  = 48 / $longest;
+			$width  = max( 1, (int) round( $width * $scale ) );
+			$height = max( 1, (int) round( $height * $scale ) );
+		}
+
+		return array(
+			'url'    => $src[0],
+			'width'  => $width,
+			'height' => $height,
+		);
 	}
 
 	/**

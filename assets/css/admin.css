@@ -25,6 +25,17 @@
 	margin-left: 6px;
 }
 
+#low-dl-marker-image-preview {
+	display: block;
+	max-width: 64px;
+	max-height: 64px;
+	margin: 0 0 8px;
+}
+
+#low-dl-marker-image-remove {
+	margin-left: 6px;
+}
+
 .low-dl-service .low-dl-service-radius {
 	margin: 12px 0;
 }

@@ -121,13 +121,7 @@
 		}).addTo(map);
 
 		var markers = window.L.layerGroup().addTo(map);
-		var dealerIcon = window.L.divIcon({
-			className: 'low-dl-divicon',
-			html: '<span class="low-dl-marker"></span>',
-			iconSize: [24, 24],
-			iconAnchor: [12, 24],
-			popupAnchor: [0, -22]
-		});
+		var dealerIcon = dealerMarkerIcon();
 		var originIcon = window.L.divIcon({
 			className: 'low-dl-divicon',
 			html: '<span class="low-dl-origin"></span>',
@@ -372,6 +366,55 @@
 
 			fitResults(points);
 			map.invalidateSize();
+		}
+
+		function dealerMarkerIcon() {
+			var style = root.getAttribute('data-marker-style') || 'circle';
+
+			if (style === 'pin') {
+				var iconUrl = root.getAttribute('data-pin-icon') || '';
+
+				if (iconUrl) {
+					var pin = {
+						iconUrl: iconUrl,
+						iconRetinaUrl: root.getAttribute('data-pin-icon-2x') || iconUrl,
+						iconSize: [25, 41],
+						iconAnchor: [12, 41],
+						popupAnchor: [1, -34]
+					};
+					var shadowUrl = root.getAttribute('data-pin-shadow') || '';
+
+					if (shadowUrl) {
+						pin.shadowUrl = shadowUrl;
+						pin.shadowSize = [41, 41];
+					}
+
+					return window.L.icon(pin);
+				}
+			}
+
+			if (style === 'image') {
+				var imageUrl = root.getAttribute('data-marker-image') || '';
+				var width = parseInt(root.getAttribute('data-marker-image-width') || '0', 10);
+				var height = parseInt(root.getAttribute('data-marker-image-height') || '0', 10);
+
+				if (imageUrl && width > 0 && height > 0) {
+					return window.L.icon({
+						iconUrl: imageUrl,
+						iconSize: [width, height],
+						iconAnchor: [Math.round(width / 2), height],
+						popupAnchor: [0, -height]
+					});
+				}
+			}
+
+			return window.L.divIcon({
+				className: 'low-dl-divicon',
+				html: '<span class="low-dl-marker"></span>',
+				iconSize: [24, 24],
+				iconAnchor: [12, 24],
+				popupAnchor: [0, -22]
+			});
 		}
 
 		function addDealerMarker(dealer, point, unit) {

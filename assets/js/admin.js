@@ -95,6 +95,114 @@
 		}
 	} );
 
+	document.addEventListener( 'DOMContentLoaded', function () {
+		var style = document.getElementById( 'low-dl-marker-style' );
+		var colorRow = document.getElementById( 'low-dl-marker-color-row' );
+		var imageRow = document.getElementById( 'low-dl-marker-image-row' );
+		var imageId = document.getElementById( 'low-dl-marker-image-id' );
+		var preview = document.getElementById( 'low-dl-marker-image-preview' );
+		var selectButton = document.getElementById( 'low-dl-marker-image-select' );
+		var removeButton = document.getElementById( 'low-dl-marker-image-remove' );
+		var frame = null;
+
+		if ( ! style || ! colorRow || ! imageRow ) {
+			return;
+		}
+
+		var syncStyle = function () {
+			if ( 'circle' === style.value ) {
+				colorRow.removeAttribute( 'hidden' );
+			} else {
+				colorRow.setAttribute( 'hidden', 'hidden' );
+			}
+
+			if ( 'image' === style.value ) {
+				imageRow.removeAttribute( 'hidden' );
+			} else {
+				imageRow.setAttribute( 'hidden', 'hidden' );
+			}
+		};
+
+		var imageUrl = function ( attachment ) {
+			if ( ! attachment ) {
+				return '';
+			}
+
+			if ( attachment.sizes && attachment.sizes.thumbnail && typeof attachment.sizes.thumbnail.url === 'string' ) {
+				return attachment.sizes.thumbnail.url;
+			}
+
+			return typeof attachment.url === 'string' ? attachment.url : '';
+		};
+
+		var safeUrl = function ( url ) {
+			return /^https?:\/\//i.test( url ) ? url : '';
+		};
+
+		style.addEventListener( 'change', syncStyle );
+		syncStyle();
+
+		if ( selectButton ) {
+			selectButton.addEventListener( 'click', function ( event ) {
+				event.preventDefault();
+
+				if ( ! window.wp || ! window.wp.media ) {
+					return;
+				}
+
+				if ( ! frame ) {
+					frame = window.wp.media( {
+						title: selectButton.getAttribute( 'data-title' ) || 'Dealer marker',
+						button: {
+							text: selectButton.getAttribute( 'data-button' ) || 'Use this image'
+						},
+						library: {
+							type: 'image'
+						},
+						multiple: false
+					} );
+
+					frame.on( 'select', function () {
+						var attachment = frame.state().get( 'selection' ).first().toJSON();
+						var url = safeUrl( imageUrl( attachment ) );
+
+						if ( imageId ) {
+							imageId.value = attachment.id ? String( attachment.id ) : '0';
+						}
+
+						if ( preview && url ) {
+							preview.setAttribute( 'src', url );
+							preview.removeAttribute( 'hidden' );
+						}
+
+						if ( removeButton ) {
+							removeButton.removeAttribute( 'hidden' );
+						}
+					} );
+				}
+
+				frame.open();
+			} );
+		}
+
+		if ( removeButton ) {
+			removeButton.addEventListener( 'click', function ( event ) {
+				event.preventDefault();
+
+				if ( imageId ) {
+					imageId.value = '0';
+				}
+
+				if ( preview ) {
+					preview.removeAttribute( 'src' );
+					preview.setAttribute( 'hidden', 'hidden' );
+				}
+
+				removeButton.setAttribute( 'hidden', 'hidden' );
+			} );
+		}
+	} );
+
 	document.addEventListener( 'click', function ( event ) {
 		var target = event.target;
 
