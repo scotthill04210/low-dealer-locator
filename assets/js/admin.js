@@ -94,4 +94,36 @@
 			}( rows[ rowIndex ] ) );
 		}
 	} );
+
+	document.addEventListener( 'click', function ( event ) {
+		var target = event.target;
+
+		if ( ! target || ! target.closest ) {
+			return;
+		}
+
+		if ( ! target.closest( '#low-dl-missing-coords .notice-dismiss' ) ) {
+			return;
+		}
+
+		var notice = document.getElementById( 'low-dl-missing-coords' );
+
+		if ( ! notice || notice.getAttribute( 'data-dismissed' ) === '1' ) {
+			return;
+		}
+
+		notice.setAttribute( 'data-dismissed', '1' );
+
+		var body = new window.FormData();
+
+		body.append( 'action', 'low_dl_dismiss_missing_notice' );
+		body.append( 'nonce', notice.getAttribute( 'data-nonce' ) || '' );
+		body.append( 'signature', notice.getAttribute( 'data-signature' ) || '' );
+
+		window.fetch( notice.getAttribute( 'data-ajax' ) || '', {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: body
+		} );
+	} );
 }() );

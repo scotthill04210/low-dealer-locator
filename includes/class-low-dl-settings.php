@@ -204,11 +204,12 @@ class LOW_DL_Settings {
 	 */
 	private function get_tabs() {
 		return array(
-			'general'   => __( 'General', 'low-dealer-locator' ),
-			'import'    => __( 'Import', 'low-dealer-locator' ),
-			'mapping'   => __( 'Field Mapping', 'low-dealer-locator' ),
-			'geocoding' => __( 'Geocoding', 'low-dealer-locator' ),
-			'locator'   => __( 'Locator', 'low-dealer-locator' ),
+			'general'       => __( 'General', 'low-dealer-locator' ),
+			'import'        => __( 'Import', 'low-dealer-locator' ),
+			'mapping'       => __( 'Field Mapping', 'low-dealer-locator' ),
+			'geocoding'     => __( 'Geocoding', 'low-dealer-locator' ),
+			'locator'       => __( 'Locator', 'low-dealer-locator' ),
+			'instructions'  => __( 'Instructions', 'low-dealer-locator' ),
 		);
 	}
 
@@ -810,6 +811,8 @@ class LOW_DL_Settings {
 			</nav>
 			<?php if ( 'import' === $tab ) : ?>
 				<?php LOW_DL_Zip_Manager::render_import_tab(); ?>
+			<?php elseif ( 'instructions' === $tab ) : ?>
+				<?php $this->render_instructions(); ?>
 			<?php elseif ( 'mapping' === $tab && empty( self::get_dealer_post_types() ) ) : ?>
 				<?php LOW_DL_Field_Mapper::render_fields(); ?>
 			<?php else : ?>
@@ -1053,6 +1056,189 @@ class LOW_DL_Settings {
 				</td>
 			</tr>
 		</table>
+		<?php
+	}
+
+	/**
+	 * Read-only instructions. This tab does not save settings.
+	 *
+	 * @return void
+	 */
+	private function render_instructions() {
+		$tabs = array(
+			'general'   => $this->get_tab_url( 'general' ),
+			'import'    => $this->get_tab_url( 'import' ),
+			'mapping'   => $this->get_tab_url( 'mapping' ),
+			'geocoding' => $this->get_tab_url( 'geocoding' ),
+			'locator'   => $this->get_tab_url( 'locator' ),
+		);
+		?>
+		<div class="low-dl-docs">
+			<p><?php echo esc_html__( 'LOW Dealer Locator attaches service-area zip codes to dealer records and shows those dealers on a map. Visitors can search by zip code, street address, or their current location.', 'low-dealer-locator' ); ?></p>
+			<ul class="low-dl-docs-contents">
+				<li><a href="#low-dl-docs-start"><?php echo esc_html__( 'Start here', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-dealer"><?php echo esc_html__( 'Add a dealer', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-import"><?php echo esc_html__( 'Import zip codes', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-mapping"><?php echo esc_html__( 'Read fields you already store', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-geo"><?php echo esc_html__( 'Look up coordinates', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-locator"><?php echo esc_html__( 'Set how the locator behaves', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-place"><?php echo esc_html__( 'Place the locator on a page', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-update"><?php echo esc_html__( 'Install an update', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-remove"><?php echo esc_html__( 'Remove the plugin', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-privacy"><?php echo esc_html__( 'Map and address privacy', 'low-dealer-locator' ); ?></a></li>
+			</ul>
+
+			<h2 id="low-dl-docs-start"><?php echo esc_html__( 'Start here', 'low-dealer-locator' ); ?></h2>
+			<ol>
+				<li>
+					<?php
+					echo wp_kses(
+						sprintf(
+							/* translators: %s: URL of the General settings tab. */
+							__( 'Open the <a href="%s">General</a> tab.', 'low-dealer-locator' ),
+							esc_url( $tabs['general'] )
+						),
+						array(
+							'a' => array(
+								'href' => array(),
+							),
+						)
+					);
+					?>
+				</li>
+				<li><?php echo esc_html__( 'Check the post types that already hold dealers, or check “Create a Dealer Locator post type”. That adds a Dealers menu for editing. Those screens do not create public dealer pages.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Save. Only published dealers from the selected post types appear in the locator. Password-protected dealers are left out.', 'low-dealer-locator' ); ?></li>
+			</ol>
+
+			<h2 id="low-dl-docs-dealer"><?php echo esc_html__( 'Add a dealer', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'Open the dealer and set the title. The title is the name visitors see.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'In Service Area Zip Codes, enter the zips this dealer serves. Separate them with commas, spaces, or new lines. A ZIP+4 such as 30301-1234 is stored as 30301. A 3-digit or 4-digit number is padded with leading zeros. Duplicates are removed. A value that is not a zip is skipped, and a notice lists the skipped values after you save.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'In Dealer Details, fill in email, website, phone, street, city, state, ZIP code, latitude, and longitude. A field appears there only when Field Mapping leaves it set to Plugin field. The plugin fills latitude and longitude from the address when you save, unless you check “Don\'t auto-geocode this dealer (use the coordinates entered here)”.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-import"><?php echo esc_html__( 'Import zip codes', 'low-dealer-locator' ); ?></h2>
+			<p>
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: %s: URL of the Import settings tab. */
+						__( 'On the <a href="%s">Import</a> tab, upload a .csv file of 2 MB or less, with at most 5,000 data rows.', 'low-dealer-locator' ),
+						esc_url( $tabs['import'] )
+					),
+					array(
+						'a' => array(
+							'href' => array(),
+						),
+					)
+				);
+				?>
+			</p>
+			<p><?php echo esc_html__( 'The first row must name the columns dealer and zip. The dealer column is a post ID or an exact title. Put one zip in each row, or several zips in one cell separated by commas, spaces, or semicolons.', 'low-dealer-locator' ); ?></p>
+			<pre><?php echo esc_html( "dealer,zip\n42,30301\nAcme Propane,\"30302, 30303\"" ); ?></pre>
+			<p><?php echo esc_html__( 'Add to existing zips keeps the zips already stored and adds the ones in the file.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Replace existing zips for dealers in this file overwrites the stored zips of dealers who appear in the file. Check “I understand this overwrites those dealers\' current zips” before importing. Dealers who are not in the file stay as they are.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-mapping"><?php echo esc_html__( 'Read fields you already store', 'low-dealer-locator' ); ?></h2>
+			<p>
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: %s: URL of the Field Mapping settings tab. */
+						__( 'Use the <a href="%s">Field Mapping</a> tab when contact details, the address, or coordinates already live in custom fields, ACF fields, or the post title, excerpt, or content.', 'low-dealer-locator' ),
+						esc_url( $tabs['mapping'] )
+					),
+					array(
+						'a' => array(
+							'href' => array(),
+						),
+					)
+				);
+				?>
+			</p>
+			<p><?php echo esc_html__( 'For each dealer post type, set Email, Website, Phone, Street, City, State, ZIP code, Latitude, and Longitude. The dealer name is always the post title.', 'low-dealer-locator' ); ?></p>
+			<ul>
+				<li><?php echo esc_html__( 'Plugin field stores the value in Dealer Details.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Custom field (post meta) reads a meta key you name.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'ACF field reads an ACF field name. ACF must be active.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Core field reads the title, excerpt, or content.', 'low-dealer-locator' ); ?></li>
+			</ul>
+			<p><?php echo esc_html__( 'Mapping reads those other sources. Dealer Details and the geocoder write the plugin\'s own fields. A custom field or ACF field left blank is read from the plugin field instead. Select at least one dealer post type on the General tab before this tab has anything to map.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-geo"><?php echo esc_html__( 'Look up coordinates', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'Distance search needs a numeric latitude and longitude. Dealers without coordinates can still match a zip search. They are left out of distance results.', 'low-dealer-locator' ); ?></p>
+			<p>
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: %s: URL of the Geocoding settings tab. */
+						__( 'On the <a href="%s">Geocoding</a> tab, the default service is the public Nominatim service. It is for light use. Enter a contact email so requests identify this site. Leave the email blank to use the site admin email. Country codes default to us. Leave them blank to search worldwide.', 'low-dealer-locator' ),
+						esc_url( $tabs['geocoding'] )
+					),
+					array(
+						'a' => array(
+							'href' => array(),
+						),
+					)
+				);
+				?>
+			</p>
+			<p><?php echo esc_html__( 'A paid or self-hosted service that accepts the same search URL can be entered in Geocoder URL. The public Nominatim service does not need an API key. Leave API key blank. A later blank key keeps a key that is already saved. Check “Remove the saved key” to clear it.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Saving a dealer queues a lookup from the street, city, state, and ZIP code. The queue runs on WP-Cron. If WP-Cron is turned off, a server cron job must request wp-cron.php. On the Dealer Locator settings screen and on dealer list screens, administrators see a notice naming published dealers that still have no coordinates. The notice has a close button. It stays closed until that list of dealers changes.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-locator"><?php echo esc_html__( 'Set how the locator behaves', 'low-dealer-locator' ); ?></h2>
+			<p>
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: %s: URL of the Locator settings tab. */
+						__( 'On the <a href="%s">Locator</a> tab:', 'low-dealer-locator' ),
+						esc_url( $tabs['locator'] )
+					),
+					array(
+						'a' => array(
+							'href' => array(),
+						),
+					)
+				);
+				?>
+			</p>
+			<ul>
+				<li><?php echo esc_html__( 'Number of nearest dealers, from 1 to 50. The default is 5.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Maximum distance. 0 means no limit.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Distance unit: miles or kilometers.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Headings and the empty-state message. A blank field uses the placeholder text.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Map height in pixels, from 200 to 1200. The default is 450.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Marker color.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Default zoom, from 1 to 18. The default is 4.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Map tile URL. The default is OpenStreetMap and must include {z}, {x}, and {y}. Public OpenStreetMap tiles are for light use.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Extra map attribution is added after © OpenStreetMap contributors.', 'low-dealer-locator' ); ?></li>
+			</ul>
+
+			<h2 id="low-dl-docs-place"><?php echo esc_html__( 'Place the locator on a page', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'Any of these shows the same locator.', 'low-dealer-locator' ); ?></p>
+			<ul>
+				<li><code>[low_dealer_locator]</code></li>
+				<li><code>[low_dealer_locator height="600" zoom="10"]</code></li>
+			</ul>
+			<p><?php echo esc_html__( 'Height is 200 to 1200 pixels. Zoom is 1 to 18. A missing or out-of-range value uses the Locator tab. The Dealer Locator block and the Dealer Locator widget accept the same height and zoom. Leave them blank to use the Locator tab.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'A zip that a dealer lists is shown first, under the heading for dealers who serve that zip. If no dealer lists it, the locator shows the nearest dealers that have coordinates.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'An address search and Use my location go straight to the nearest dealers. Use my location is available on an https page when the browser allows location. Those coordinates are sent only to this site and are not stored.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'An empty search or a value that is not a 5-digit zip shows a message on the page and does not look anything up. If nothing is within the maximum distance, the empty-state message is shown. The map does not zoom with the mouse wheel until the visitor clicks or focuses the map.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-update"><?php echo esc_html__( 'Install an update', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'On the Plugins screen, choose Check for updates. WordPress installs a GitHub release when its version is newer than the copy on this site. Install from that screen. Uploading the GitHub zip through Plugins, Add New creates a second plugin folder instead of replacing this one.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-remove"><?php echo esc_html__( 'Remove the plugin', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'On the General tab, leave “Delete all plugin data when the plugin is deleted” unchecked. Deleting the plugin then leaves the zip tables, settings, and dealer fields in place. Checking it removes that plugin data when the plugin is deleted. Dealer posts are kept either way.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-privacy"><?php echo esc_html__( 'Map and address privacy', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'Each visitor\'s browser requests map tiles from the tile server on the Locator tab. The default server is tile.openstreetmap.org. The visitor\'s IP address and the map area are sent there.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Dealer addresses are sent to the geocoder when a dealer is saved. A visitor\'s typed address, and a zip that is not in the bundled US zip table, are sent from this server during a search. The default geocoder is nominatim.openstreetmap.org. Each request includes the site name, the site URL, and the contact email from the Geocoding tab.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'The plugin does not set cookies. The public OpenStreetMap tile and Nominatim services are for light use. If you change the tile URL or geocoder URL, follow that provider\'s terms.', 'low-dealer-locator' ); ?></p>
+		</div>
 		<?php
 	}
 

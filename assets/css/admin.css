@@ -108,3 +108,45 @@
 .low-dl-details .low-dl-details-geo {
 	margin-top: 4px;
 }
+
+.low-dl-docs {
+	max-width: 760px;
+}
+
+.low-dl-docs h2 {
+	margin: 1.6em 0 0.6em;
+	padding-top: 0.2em;
+}
+
+.low-dl-docs p,
+.low-dl-docs li {
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.low-dl-docs .low-dl-docs-contents,
+.low-dl-docs ul,
+.low-dl-docs ol {
+	margin: 0.4em 0 1em 1.4em;
+}
+
+.low-dl-docs ul,
+.low-dl-docs .low-dl-docs-contents {
+	list-style: disc;
+}
+
+.low-dl-docs ol {
+	list-style: decimal;
+}
+
+.low-dl-docs code {
+	font-size: 13px;
+}
+
+.low-dl-docs pre {
+	margin: 8px 0 1em;
+	padding: 8px 12px;
+	overflow: auto;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+}

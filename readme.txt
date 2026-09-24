@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.1
+Stable tag: 0.3.2
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -35,7 +35,8 @@ shows the nearest dealers by distance.
 
 1. Activate the plugin.
 2. Open Settings > Dealer Locator. Select the post types that hold dealers, or
-   check "Create a Dealer Locator post type".
+   check "Create a Dealer Locator post type". The Instructions tab has the
+   full guide.
 3. Edit a dealer and enter zip codes in the Service Area Zip Codes box, or
    import a CSV on the Import tab.
 4. Add the locator with the shortcode `[low_dealer_locator]`, the Dealer
@@ -225,6 +226,10 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.2 =
+* Settings includes an Instructions tab with the full usage guide.
+* The missing-coordinates notice can be closed, and only Administrators see it.
 
 = 0.3.1 =
 * Readme explains how Check for updates installs a newer GitHub release.

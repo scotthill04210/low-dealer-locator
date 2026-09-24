@@ -50,6 +50,11 @@ class LOW_DL_Geo_Queue {
 	const MAX_ATTEMPTS = 3;
 
 	/**
+	 * User meta that remembers a closed missing-coordinates notice.
+	 */
+	const DISMISS_META = 'low_dl_missing_notice_dismissed';
+
+	/**
 	 * Register save, delete, cron, and admin hooks.
 	 */
 	public function __construct() {
@@ -57,7 +62,9 @@ class LOW_DL_Geo_Queue {
 		add_action( 'deleted_post', array( $this, 'remove_deleted' ) );
 		add_action( self::CRON_HOOK, array( __CLASS__, 'process' ) );
 		add_action( 'admin_notices', array( $this, 'render_notices' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_notice_script' ) );
 		add_action( 'admin_post_low_dl_geocode_missing', array( $this, 'handle_backfill' ) );
+		add_action( 'wp_ajax_low_dl_dismiss_missing_notice', array( $this, 'dismiss_missing_notice' ) );
 	}
 
 	/**
@@ -277,12 +284,77 @@ class LOW_DL_Geo_Queue {
 	 * @return void
 	 */
 	public function render_notices() {
-		if ( ! current_user_can( 'manage_options' ) || ! self::is_notice_screen() ) {
+		if ( ! self::is_notice_screen() ) {
 			return;
 		}
 
-		$this->render_queued_notice();
-		$this->render_missing_notice();
+		if ( current_user_can( 'manage_options' ) ) {
+			$this->render_queued_notice();
+		}
+
+		if ( self::current_user_is_administrator() ) {
+			$this->render_missing_notice();
+		}
+	}
+
+	/**
+	 * Script that remembers when an administrator closes the missing-coordinates notice.
+	 *
+	 * @return void
+	 */
+	public function enqueue_notice_script() {
+		if ( ! self::current_user_is_administrator() || ! self::is_notice_screen() ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'low-dl-admin',
+			LOW_DL_URL . 'assets/js/admin.js',
+			array(),
+			LOW_DL_VERSION,
+			true
+		);
+	}
+
+	/**
+	 * Store the closed notice so it stays hidden for this administrator.
+	 *
+	 * @return void
+	 */
+	public function dismiss_missing_notice() {
+		if ( ! self::current_user_is_administrator() ) {
+			wp_send_json_error( null, 403 );
+		}
+
+		check_ajax_referer( 'low_dl_dismiss_missing_notice', 'nonce' );
+
+		$signature = '';
+
+		if ( isset( $_POST['signature'] ) && is_scalar( $_POST['signature'] ) ) {
+			$signature = sanitize_text_field( wp_unslash( (string) $_POST['signature'] ) );
+		}
+
+		if ( 1 !== preg_match( '/^[a-f0-9]{32}$/', $signature ) ) {
+			wp_send_json_error( null, 400 );
+		}
+
+		update_user_meta( get_current_user_id(), self::DISMISS_META, $signature );
+		wp_send_json_success();
+	}
+
+	/**
+	 * Whether the current user has the Administrator role.
+	 *
+	 * @return bool
+	 */
+	private static function current_user_is_administrator() {
+		$user = wp_get_current_user();
+
+		if ( ! ( $user instanceof WP_User ) ) {
+			return false;
+		}
+
+		return in_array( 'administrator', (array) $user->roles, true );
 	}
 
 	/**
@@ -673,6 +745,19 @@ class LOW_DL_Geo_Queue {
 			return;
 		}
 
+		$ids = array();
+
+		foreach ( $missing as $item ) {
+			$ids[] = (int) $item['id'];
+		}
+
+		$signature = self::missing_notice_signature( $ids );
+		$dismissed = get_user_meta( get_current_user_id(), self::DISMISS_META, true );
+
+		if ( is_string( $dismissed ) && hash_equals( $signature, $dismissed ) ) {
+			return;
+		}
+
 		$summary = sprintf(
 			/* translators: %d: number of dealers without coordinates. */
 			_n(
@@ -684,7 +769,13 @@ class LOW_DL_Geo_Queue {
 			$count
 		);
 		?>
-		<div class="notice notice-warning">
+		<div
+			class="notice notice-warning is-dismissible"
+			id="low-dl-missing-coords"
+			data-ajax="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
+			data-nonce="<?php echo esc_attr( wp_create_nonce( 'low_dl_dismiss_missing_notice' ) ); ?>"
+			data-signature="<?php echo esc_attr( $signature ); ?>"
+		>
 			<p><?php echo esc_html( $summary ); ?></p>
 			<ul>
 				<?php foreach ( array_slice( $missing, 0, 20 ) as $item ) : ?>
@@ -724,6 +815,19 @@ class LOW_DL_Geo_Queue {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Fingerprint of the dealers currently missing coordinates.
+	 *
+	 * @param int[] $ids Dealer post IDs.
+	 * @return string
+	 */
+	private static function missing_notice_signature( array $ids ) {
+		$ids = array_map( 'intval', $ids );
+		sort( $ids, SORT_NUMERIC );
+
+		return md5( implode( ',', $ids ) );
 	}
 
 	/**
