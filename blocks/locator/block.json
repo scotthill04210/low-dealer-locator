@@ -1,0 +1,25 @@
+{
+	"apiVersion": 3,
+	"name": "low-dealer-locator/locator",
+	"title": "Dealer Locator",
+	"category": "widgets",
+	"icon": "location",
+	"description": "A map and search box that finds dealers by zip code, address, or your visitor's location.",
+	"keywords": [ "dealer", "locator", "map", "zip" ],
+	"textdomain": "low-dealer-locator",
+	"attributes": {
+		"height": {
+			"type": "string",
+			"default": ""
+		},
+		"zoom": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"editorScript": "low-dl-block-editor"
+}

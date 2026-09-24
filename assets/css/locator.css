@@ -1,0 +1,207 @@
+/* Locator shell. Every rule stays under .low-dl-locator. */
+
+.low-dl-locator {
+	font: inherit;
+	color: inherit;
+	box-sizing: border-box;
+}
+
+.low-dl-locator *,
+.low-dl-locator *::before,
+.low-dl-locator *::after {
+	box-sizing: border-box;
+}
+
+.low-dl-locator .low-dl-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+.low-dl-locator [hidden] {
+	display: none !important;
+}
+
+.low-dl-locator .low-dl-form {
+	display: flex;
+	flex-flow: row wrap;
+	align-items: stretch;
+	gap: 0.5em;
+	margin: 0 0 1em;
+}
+
+.low-dl-locator .low-dl-form input[type="text"] {
+	flex: 1 1 12em;
+	min-width: 0;
+	width: auto;
+}
+
+.low-dl-locator .low-dl-form button {
+	flex: 0 0 auto;
+}
+
+.low-dl-locator input[type="text"],
+.low-dl-locator button {
+	font: inherit;
+	line-height: inherit;
+	color: inherit;
+	background: transparent;
+	border: 1px solid currentColor;
+	border-color: color-mix(in srgb, currentColor 35%, transparent);
+	border-radius: 4px;
+	padding: 0.6em 0.9em;
+	margin: 0;
+}
+
+.low-dl-locator .low-dl-form button[type="submit"] {
+	background: var(--low-dl-marker);
+	color: #fff;
+	border-color: var(--low-dl-marker);
+}
+
+.low-dl-locator input[type="text"]:focus-visible,
+.low-dl-locator button:focus-visible {
+	outline: 2px solid var(--low-dl-marker);
+	outline-offset: 2px;
+}
+
+.low-dl-locator .low-dl-message {
+	margin: 0 0 0.75em;
+	color: inherit;
+}
+
+.low-dl-locator .low-dl-message:empty {
+	margin: 0;
+}
+
+.low-dl-locator .low-dl-message.is-error {
+	color: #9b2c2c;
+}
+
+.low-dl-locator .low-dl-body {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1em;
+	align-items: start;
+}
+
+.low-dl-locator .low-dl-map {
+	order: -1;
+	position: relative;
+	z-index: 0;
+	width: 100%;
+	height: var(--low-dl-map-height);
+	min-height: var(--low-dl-map-height);
+	border-radius: 4px;
+	background: #f4f5f6;
+	overflow: hidden;
+}
+
+.low-dl-locator .low-dl-map .leaflet-container {
+	height: 100%;
+	width: 100%;
+	font: inherit;
+}
+
+.low-dl-locator .low-dl-map img {
+	max-width: none;
+}
+
+.low-dl-locator .low-dl-results h2 {
+	font: inherit;
+	margin: 0 0 0.75em;
+}
+
+.low-dl-locator .low-dl-results h2:empty {
+	margin: 0;
+}
+
+.low-dl-locator .low-dl-results ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.low-dl-locator li.low-dl-dealer {
+	margin: 0 0 0.6em;
+	padding: 0.75em 0.9em;
+	border: 1px solid currentColor;
+	border-color: color-mix(in srgb, currentColor 28%, transparent);
+	border-radius: 4px;
+}
+
+.low-dl-locator li.low-dl-dealer:last-child {
+	margin-bottom: 0;
+}
+
+.low-dl-locator li.low-dl-dealer.is-active {
+	outline: 2px solid var(--low-dl-marker);
+	outline-offset: 1px;
+}
+
+.low-dl-locator .low-dl-marker {
+	display: block;
+	box-sizing: border-box;
+	width: 24px;
+	height: 24px;
+	border: 2px solid #fff;
+	border-radius: 50%;
+	background: var(--low-dl-marker);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.low-dl-locator .low-dl-divicon {
+	background: none;
+	border: 0;
+}
+
+.low-dl-locator .low-dl-origin {
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: 4px;
+	border-radius: 50%;
+	background: #1c7ed6;
+	border: 3px solid #fff;
+	box-shadow: 0 0 0 2px #1c7ed6;
+}
+
+.low-dl-locator .low-dl-dealer a {
+	color: inherit;
+}
+
+.low-dl-locator .low-dl-dealer p {
+	margin: 0.25em 0 0;
+}
+
+.low-dl-locator .low-dl-view {
+	margin-top: 0.6em;
+}
+
+.low-dl-locator .leaflet-popup-content,
+.low-dl-locator .low-dl-popup {
+	font: inherit;
+	color: inherit;
+}
+
+@media (min-width: 720px) {
+	.low-dl-locator .low-dl-body {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+	}
+
+	.low-dl-locator .low-dl-map {
+		order: 0;
+	}
+
+	.low-dl-locator .low-dl-results {
+		max-height: var(--low-dl-map-height);
+		overflow-y: auto;
+	}
+}

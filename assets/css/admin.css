@@ -1,0 +1,110 @@
+.low-dl-settings .nav-tab-wrapper {
+	margin-bottom: 16px;
+}
+
+.low-dl-post-type-filter {
+	margin-left: 6px;
+	max-width: 280px;
+}
+
+.low-dl-post-type-list {
+	margin: 8px 0 0;
+	max-height: 280px;
+	overflow: auto;
+	padding: 8px 12px;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+}
+
+.low-dl-post-type-list li {
+	margin: 0;
+	padding: 4px 0;
+}
+
+.low-dl-post-type-list code {
+	margin-left: 6px;
+}
+
+.low-dl-zips textarea {
+	width: 100%;
+	min-height: 160px;
+}
+
+.low-dl-zips .description,
+.low-dl-zips .low-dl-zips-count {
+	margin: 8px 0 0;
+}
+
+.low-dl-import .low-dl-import-modes label,
+.low-dl-import .low-dl-import-confirm {
+	display: block;
+	margin: 6px 0;
+}
+
+.low-dl-import .low-dl-import-help {
+	max-width: 720px;
+	margin: 12px 0;
+}
+
+.low-dl-import pre {
+	margin: 8px 0 0;
+	padding: 8px 12px;
+	overflow: auto;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+}
+
+.low-dl-import .low-dl-import-details {
+	margin: 8px 0 0;
+	padding-left: 18px;
+	list-style: disc;
+}
+
+.low-dl-mapping table {
+	max-width: 920px;
+	margin: 0 0 24px;
+}
+
+.low-dl-mapping th,
+.low-dl-mapping td {
+	vertical-align: middle;
+}
+
+.low-dl-mapping .low-dl-mapping-key input[type="text"],
+.low-dl-mapping .low-dl-mapping-key select {
+	width: 100%;
+	max-width: 320px;
+}
+
+.low-dl-mapping .low-dl-mapping-control[hidden] {
+	display: none;
+}
+
+.low-dl-details .low-dl-details-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 0 0 12px;
+}
+
+.low-dl-details .low-dl-details-field {
+	flex: 1 1 180px;
+	max-width: 280px;
+}
+
+.low-dl-details .low-dl-details-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.low-dl-details input[type="text"],
+.low-dl-details input[type="email"],
+.low-dl-details input[type="url"],
+.low-dl-details input[type="tel"] {
+	width: 100%;
+}
+
+.low-dl-details .low-dl-details-geo {
+	margin-top: 4px;
+}

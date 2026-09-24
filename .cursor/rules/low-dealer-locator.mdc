@@ -1,0 +1,51 @@
+---
+description: LOW Dealer Locator plugin conventions and stack decisions
+alwaysApply: true
+---
+
+## PURPOSE
+- WordPress plugin that attaches service-area zip codes to dealer records and outputs all dealers as JSON. The JSON powers a front-end locator (map, search by zip, address, or visitor location).
+
+## NAMING
+- Plugin slug and folder: low-dealer-locator. Prefixes: LOW_DL_ (classes, constants) and low_dl_ (functions, hooks, options). Text domain: low-dealer-locator. Class files: includes/class-low-dl-{name}.php.
+- Option key: low_dl_settings (single array). Post meta prefix: _low_dl_. Custom tables: {$wpdb->prefix}low_dl_dealer_zips (post_id, zip) and {$wpdb->prefix}low_dl_zip_centroids (zip, lat, lng).
+
+## CODE STANDARDS
+- WordPress coding standards, PHP 7.4+ compatible. ABSPATH guard at the top of every PHP file.
+- Sanitize all input, escape all output (esc_html, esc_attr, esc_url, wp_kses_post).
+- Nonce and capability check on every admin action, AJAX handler, and REST endpoint. Public REST routes must have an explicit, justified permission_callback.
+- Use $wpdb->prepare() for every custom query.
+- Self-contained: no Composer packages, no required dependencies. ACF is supported but optional; always check function_exists before calling ACF functions.
+- All user-facing strings use __() / esc_html__() with the text domain.
+
+## FILE RESPONSIBILITIES
+- low-dealer-locator.php: header, constants, activation hooks, loads LOW_DL_Plugin only.
+- class-low-dl-plugin.php: bootstrap and hook wiring. class-low-dl-install.php: activation, tables, defaults.
+- class-low-dl-settings.php: settings page and option access. class-low-dl-post-type.php: dealer_locator CPT.
+- class-low-dl-zip-manager.php: zip meta box, parsing, validation, CSV import, dealer zips table.
+- class-low-dl-field-mapper.php: field mapping UI, value resolution, and the dealer details meta box. class-low-dl-rest.php: REST routes, transient cache, per-IP rate limiting.
+- class-low-dl-geocoder.php: Nominatim calls, throttling, caching. class-low-dl-centroid-table.php: zip centroid table and lookups.
+- class-low-dl-geo-queue.php: geocode-on-save queue, cron processor, and the missing-coordinates notice.
+- class-low-dl-shortcode.php: shortcode and the shared render function. class-low-dl-block.php: block registration. class-low-dl-widget.php: WP_Widget wrapper.
+- Do not put code in a file outside its responsibility.
+
+## STACK DECISIONS
+- Map: Leaflet + OpenStreetMap tiles, bundled locally in assets/vendor/leaflet/. No CDN assets ever. Tile URL is a setting. Keep the "© OpenStreetMap contributors" attribution visible. Leaflet.markercluster is optional.
+- Dealer address geocoding: Nominatim on save only. Store lat/lng in meta with manual override fields. Valid User-Agent (site name and admin email). Never exceed 1 request/second; queue and throttle bulk work.
+- Visitor zip search: local table of US Census ZCTA centroids from data/zcta-centroids.csv, loaded on activation. If a zip is missing, fall back to cached Nominatim.
+- Visitor address search: Nominatim called server-side through the plugin's REST endpoint, with transient caching and per-IP rate limiting and a friendly message when limited.
+- "Use my location": browser Geolocation API, no geocoding.
+- Distance: Haversine against stored lat/lng. Geocoder and tile URL are settings so paid services can be swapped in later.
+
+## SEARCH BEHAVIOR
+- Zip search: dealers whose service-area zips include it, shown under "Dealers serving your area." If none, use the zip's coordinates and show nearest dealers, closest first, under "No dealers list your zip code. Here are the nearest." Address search and geolocation go straight to nearest-by-distance.
+- Show distance per fallback result (miles or km setting). Fit map bounds to the search point and results.
+- Settings: number of nearest dealers (default 5), optional max distance (default none), editable heading and empty-state text.
+- Dealers missing lat/lng are excluded from distance results and listed in an admin notice.
+- Invalid input (not a 5-digit zip, empty) shows an inline message and makes no lookups.
+
+## JSON SHAPE
+- REST: /wp-json/low-dealer-locator/v1/dealers returns {"dealers":[{id, name, email, website, phone, address:{street,city,state,zip}, lat, lng, zip_codes:[]}]}, cached in a transient and cleared when a dealer is saved, updated, or deleted.
+
+## WORKING RULES
+- Only build what the current prompt asks for. No extra features, no extra libraries, no edits to files outside the prompt's scope. If something is unclear, ask instead of guessing.
