@@ -280,10 +280,7 @@ class LOW_DL_Geocoder {
 		$cached    = get_transient( $cache_key );
 
 		if ( is_array( $cached ) && isset( $cached['lat'], $cached['lng'] ) && is_numeric( $cached['lat'] ) && is_numeric( $cached['lng'] ) ) {
-			return array(
-				'lat' => (float) $cached['lat'],
-				'lng' => (float) $cached['lng'],
-			);
+			return self::coordinate_result( (float) $cached['lat'], (float) $cached['lng'], isset( $cached['state'] ) ? $cached['state'] : '' );
 		}
 
 		if ( is_array( $cached ) && ! empty( $cached['none'] ) ) {
@@ -603,7 +600,7 @@ class LOW_DL_Geocoder {
 			'q'              => $query,
 			'format'         => 'jsonv2',
 			'limit'          => 1,
-			'addressdetails' => 0,
+			'addressdetails' => 1,
 		);
 
 		$countries = self::setting_string( 'geocoder_countries' );
@@ -717,9 +714,48 @@ class LOW_DL_Geocoder {
 			);
 		}
 
-		return array(
-			'lat' => $lat,
-			'lng' => $lng,
+		return self::coordinate_result( $lat, $lng, self::state_from_result( $first ) );
+	}
+
+	/**
+	 * USPS abbreviation from a Nominatim address, or an empty string.
+	 *
+	 * @param array $result First geocoder result.
+	 * @return string
+	 */
+	private static function state_from_result( array $result ) {
+		if ( ! isset( $result['address'] ) || ! is_array( $result['address'] ) ) {
+			return '';
+		}
+
+		$address = $result['address'];
+		$iso     = isset( $address['ISO3166-2-lvl4'] ) ? $address['ISO3166-2-lvl4'] : '';
+
+		if ( is_string( $iso ) && 1 === preg_match( '/^US-([A-Z]{2})$/', $iso, $matches ) ) {
+			return $matches[1];
+		}
+
+		return '';
+	}
+
+	/**
+	 * Coordinate payload. State is included only when it is a known USPS code.
+	 *
+	 * @param float  $lat   Latitude.
+	 * @param float  $lng   Longitude.
+	 * @param string $state Candidate state abbreviation.
+	 * @return array{lat: float, lng: float, state?: string}
+	 */
+	private static function coordinate_result( $lat, $lng, $state ) {
+		$result = array(
+			'lat' => (float) $lat,
+			'lng' => (float) $lng,
 		);
+
+		if ( is_string( $state ) && LOW_DL_Zip_Manager::is_state_code( $state ) ) {
+			$result['state'] = $state;
+		}
+
+		return $result;
 	}
 }

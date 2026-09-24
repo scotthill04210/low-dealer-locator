@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       LOW Dealer Locator
- * Description:       Attach service-area zip codes to dealer records and publish them for a front-end locator.
- * Version:           0.3.2
+ * Description:       Attach a service area to dealer records and publish them for a front-end locator.
+ * Version:           0.3.3
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Update URI:        https://github.com/scotthill04210/low-dealer-locator
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LOW_DL_VERSION', '0.3.2' );
+define( 'LOW_DL_VERSION', '0.3.3' );
 define( 'LOW_DL_FILE', __FILE__ );
 define( 'LOW_DL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LOW_DL_URL', plugin_dir_url( __FILE__ ) );

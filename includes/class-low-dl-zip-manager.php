@@ -20,6 +20,26 @@ class LOW_DL_Zip_Manager {
 	const META_KEY = '_low_dl_zip_codes';
 
 	/**
+	 * Service radius in miles. Empty means the dealer has no radius.
+	 */
+	const RADIUS_META_KEY = '_low_dl_service_radius';
+
+	/**
+	 * Service states. Sorted, comma-separated USPS abbreviations.
+	 */
+	const STATES_META_KEY = '_low_dl_service_states';
+
+	/**
+	 * Largest radius a dealer can claim, in miles.
+	 */
+	const MAX_RADIUS_MILES = 500;
+
+	/**
+	 * Kilometers in one mile.
+	 */
+	const KM_PER_MILE = 1.609344;
+
+	/**
 	 * Nonce action.
 	 */
 	const NONCE_ACTION = 'low_dl_save_zips';
@@ -90,7 +110,7 @@ class LOW_DL_Zip_Manager {
 		foreach ( LOW_DL_Settings::get_dealer_post_types() as $post_type ) {
 			add_meta_box(
 				'low_dl_zip_codes',
-				__( 'Service Area Zip Codes', 'low-dealer-locator' ),
+				__( 'Service area', 'low-dealer-locator' ),
 				array( $this, 'render_meta_box' ),
 				$post_type,
 				'normal',
@@ -106,30 +126,104 @@ class LOW_DL_Zip_Manager {
 	 * @return void
 	 */
 	public function render_meta_box( $post ) {
-		$zips  = self::get_zips( $post->ID );
-		$count = count( $zips );
+		$zips    = self::get_zips( $post->ID );
+		$count   = count( $zips );
+		$unit    = self::distance_unit();
+		$radius  = self::radius_input_value( $post->ID, $unit );
+		$states  = self::get_states( $post->ID );
+		$maximum = ( 'km' === $unit ) ? (int) floor( self::MAX_RADIUS_MILES * self::KM_PER_MILE ) : self::MAX_RADIUS_MILES;
 
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
 		?>
-		<div class="low-dl-zips">
-			<label for="low-dl-zip-input" class="screen-reader-text">
-				<?php echo esc_html__( 'Service area zip codes', 'low-dealer-locator' ); ?>
-			</label>
-			<textarea id="low-dl-zip-input" name="<?php echo esc_attr( self::INPUT_NAME ); ?>" rows="10" cols="40"><?php echo esc_textarea( implode( "\n", $zips ) ); ?></textarea>
+		<div class="low-dl-service">
 			<p class="description">
-				<?php echo esc_html__( 'Enter zip codes separated by commas, spaces, or new lines. Duplicates are removed.', 'low-dealer-locator' ); ?>
+				<?php echo esc_html__( 'A visitor matches this dealer when any of these apply: the zip is listed, the search point is inside the radius, or the zip is in a checked state.', 'low-dealer-locator' ); ?>
 			</p>
-			<p class="low-dl-zips-count">
-				<?php
-				echo esc_html(
-					sprintf(
-						/* translators: %d: number of saved zip codes. */
-						_n( '%d zip code saved', '%d zip codes saved', $count, 'low-dealer-locator' ),
-						$count
-					)
-				);
-				?>
-			</p>
+			<div class="low-dl-service-radius">
+				<label for="low-dl-service-radius">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %s: distance unit name, Miles or Kilometers. */
+							__( 'Radius (%s)', 'low-dealer-locator' ),
+							'km' === $unit ? __( 'kilometers', 'low-dealer-locator' ) : __( 'miles', 'low-dealer-locator' )
+						)
+					);
+					?>
+				</label>
+				<input
+					type="number"
+					id="low-dl-service-radius"
+					name="low_dl_service_radius"
+					value="<?php echo esc_attr( $radius ); ?>"
+					min="0"
+					max="<?php echo esc_attr( (string) $maximum ); ?>"
+					step="0.1"
+					inputmode="decimal"
+				/>
+				<p class="description">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %s: maximum radius, including the unit. */
+							__( 'Distance from this dealer\'s address. Leave blank for no radius. %s maximum. The dealer needs map coordinates for a radius to match.', 'low-dealer-locator' ),
+							sprintf(
+								'km' === $unit ? __( '%s kilometers', 'low-dealer-locator' ) : __( '%s miles', 'low-dealer-locator' ),
+								(string) $maximum
+							)
+						)
+					);
+					?>
+				</p>
+			</div>
+			<fieldset class="low-dl-service-states">
+				<legend><?php echo esc_html__( 'States', 'low-dealer-locator' ); ?></legend>
+				<p class="description">
+					<?php echo esc_html__( 'Check each US state this dealer serves. A visitor zip in a checked state matches. Canadian provinces are not available.', 'low-dealer-locator' ); ?>
+				</p>
+				<div class="low-dl-service-state-list">
+					<?php foreach ( self::state_choices() as $code => $label ) : ?>
+						<label>
+							<input
+								type="checkbox"
+								name="low_dl_service_states[]"
+								value="<?php echo esc_attr( $code ); ?>"
+								<?php checked( in_array( $code, $states, true ) ); ?>
+							/>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: 1: state name, 2: USPS abbreviation. */
+									__( '%1$s (%2$s)', 'low-dealer-locator' ),
+									$label,
+									$code
+								)
+							);
+							?>
+						</label>
+					<?php endforeach; ?>
+				</div>
+			</fieldset>
+			<div class="low-dl-zips">
+				<label for="low-dl-zip-input">
+					<?php echo esc_html__( 'Zip codes', 'low-dealer-locator' ); ?>
+				</label>
+				<textarea id="low-dl-zip-input" name="<?php echo esc_attr( self::INPUT_NAME ); ?>" rows="8" cols="40"><?php echo esc_textarea( implode( "\n", $zips ) ); ?></textarea>
+				<p class="description">
+					<?php echo esc_html__( 'Enter zip codes separated by commas, spaces, or new lines. Duplicates are removed.', 'low-dealer-locator' ); ?>
+				</p>
+				<p class="low-dl-zips-count">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: number of saved zip codes. */
+							_n( '%d zip code saved', '%d zip codes saved', $count, 'low-dealer-locator' ),
+							$count
+						)
+					);
+					?>
+				</p>
+			</div>
 		</div>
 		<?php
 	}
@@ -198,6 +292,330 @@ class LOW_DL_Zip_Manager {
 		}
 
 		return $zips;
+	}
+
+	/**
+	 * Saved radius in miles, or null when the dealer has none.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return float|null
+	 */
+	public static function get_radius_miles( $post_id ) {
+		$stored = get_post_meta( (int) $post_id, self::RADIUS_META_KEY, true );
+
+		if ( ! is_numeric( $stored ) ) {
+			return null;
+		}
+
+		$miles = (float) $stored;
+
+		if ( $miles <= 0 ) {
+			return null;
+		}
+
+		if ( $miles > self::MAX_RADIUS_MILES ) {
+			return (float) self::MAX_RADIUS_MILES;
+		}
+
+		return $miles;
+	}
+
+	/**
+	 * Radius shown in the meta box, in the site distance unit.
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param string $unit    mi or km.
+	 * @return string
+	 */
+	public static function radius_input_value( $post_id, $unit ) {
+		$miles = self::get_radius_miles( $post_id );
+
+		if ( null === $miles ) {
+			return '';
+		}
+
+		$value = ( 'km' === $unit ) ? $miles * self::KM_PER_MILE : $miles;
+
+		return self::format_radius( $value );
+	}
+
+	/**
+	 * USPS abbreviations this dealer serves.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string[]
+	 */
+	public static function get_states( $post_id ) {
+		$stored = get_post_meta( (int) $post_id, self::STATES_META_KEY, true );
+
+		if ( ! is_string( $stored ) || '' === $stored ) {
+			return array();
+		}
+
+		$states = array();
+
+		foreach ( explode( ',', $stored ) as $code ) {
+			if ( self::is_state_code( $code ) ) {
+				$states[] = $code;
+			}
+		}
+
+		return $states;
+	}
+
+	/**
+	 * State for a US zip, or an empty string when the prefix is not a state.
+	 *
+	 * @param string $zip Five-digit zip.
+	 * @return string
+	 */
+	public static function state_for_zip( $zip ) {
+		if ( ! is_string( $zip ) || ! preg_match( '/^\d{5}$/', $zip ) ) {
+			return '';
+		}
+
+		$prefix = (int) substr( $zip, 0, 3 );
+
+		foreach ( self::zip_prefix_ranges() as $range ) {
+			if ( $prefix >= $range[0] && $prefix <= $range[1] ) {
+				return $range[2];
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Whether this is one of the state checkboxes.
+	 *
+	 * @param string $code USPS abbreviation.
+	 * @return bool
+	 */
+	public static function is_state_code( $code ) {
+		$choices = self::state_choices();
+
+		return is_string( $code ) && isset( $choices[ $code ] );
+	}
+
+	/**
+	 * US states and the District of Columbia, sorted by name.
+	 *
+	 * @return array<string, string> Abbreviation => name.
+	 */
+	public static function state_choices() {
+		return array(
+			'AL' => __( 'Alabama', 'low-dealer-locator' ),
+			'AK' => __( 'Alaska', 'low-dealer-locator' ),
+			'AZ' => __( 'Arizona', 'low-dealer-locator' ),
+			'AR' => __( 'Arkansas', 'low-dealer-locator' ),
+			'CA' => __( 'California', 'low-dealer-locator' ),
+			'CO' => __( 'Colorado', 'low-dealer-locator' ),
+			'CT' => __( 'Connecticut', 'low-dealer-locator' ),
+			'DE' => __( 'Delaware', 'low-dealer-locator' ),
+			'DC' => __( 'District of Columbia', 'low-dealer-locator' ),
+			'FL' => __( 'Florida', 'low-dealer-locator' ),
+			'GA' => __( 'Georgia', 'low-dealer-locator' ),
+			'HI' => __( 'Hawaii', 'low-dealer-locator' ),
+			'ID' => __( 'Idaho', 'low-dealer-locator' ),
+			'IL' => __( 'Illinois', 'low-dealer-locator' ),
+			'IN' => __( 'Indiana', 'low-dealer-locator' ),
+			'IA' => __( 'Iowa', 'low-dealer-locator' ),
+			'KS' => __( 'Kansas', 'low-dealer-locator' ),
+			'KY' => __( 'Kentucky', 'low-dealer-locator' ),
+			'LA' => __( 'Louisiana', 'low-dealer-locator' ),
+			'ME' => __( 'Maine', 'low-dealer-locator' ),
+			'MD' => __( 'Maryland', 'low-dealer-locator' ),
+			'MA' => __( 'Massachusetts', 'low-dealer-locator' ),
+			'MI' => __( 'Michigan', 'low-dealer-locator' ),
+			'MN' => __( 'Minnesota', 'low-dealer-locator' ),
+			'MS' => __( 'Mississippi', 'low-dealer-locator' ),
+			'MO' => __( 'Missouri', 'low-dealer-locator' ),
+			'MT' => __( 'Montana', 'low-dealer-locator' ),
+			'NE' => __( 'Nebraska', 'low-dealer-locator' ),
+			'NV' => __( 'Nevada', 'low-dealer-locator' ),
+			'NH' => __( 'New Hampshire', 'low-dealer-locator' ),
+			'NJ' => __( 'New Jersey', 'low-dealer-locator' ),
+			'NM' => __( 'New Mexico', 'low-dealer-locator' ),
+			'NY' => __( 'New York', 'low-dealer-locator' ),
+			'NC' => __( 'North Carolina', 'low-dealer-locator' ),
+			'ND' => __( 'North Dakota', 'low-dealer-locator' ),
+			'OH' => __( 'Ohio', 'low-dealer-locator' ),
+			'OK' => __( 'Oklahoma', 'low-dealer-locator' ),
+			'OR' => __( 'Oregon', 'low-dealer-locator' ),
+			'PA' => __( 'Pennsylvania', 'low-dealer-locator' ),
+			'RI' => __( 'Rhode Island', 'low-dealer-locator' ),
+			'SC' => __( 'South Carolina', 'low-dealer-locator' ),
+			'SD' => __( 'South Dakota', 'low-dealer-locator' ),
+			'TN' => __( 'Tennessee', 'low-dealer-locator' ),
+			'TX' => __( 'Texas', 'low-dealer-locator' ),
+			'UT' => __( 'Utah', 'low-dealer-locator' ),
+			'VT' => __( 'Vermont', 'low-dealer-locator' ),
+			'VA' => __( 'Virginia', 'low-dealer-locator' ),
+			'WA' => __( 'Washington', 'low-dealer-locator' ),
+			'WV' => __( 'West Virginia', 'low-dealer-locator' ),
+			'WI' => __( 'Wisconsin', 'low-dealer-locator' ),
+			'WY' => __( 'Wyoming', 'low-dealer-locator' ),
+		);
+	}
+
+	/**
+	 * Locator distance unit.
+	 *
+	 * @return string mi or km.
+	 */
+	private static function distance_unit() {
+		$unit = LOW_DL_Settings::get( 'distance_unit' );
+
+		return 'km' === $unit ? 'km' : 'mi';
+	}
+
+	/**
+	 * Store a radius posted in the site distance unit.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param mixed $raw     Posted value.
+	 * @return void
+	 */
+	private static function set_radius( $post_id, $raw ) {
+		$post_id = (int) $post_id;
+		$text    = is_scalar( $raw ) ? trim( (string) $raw ) : '';
+
+		if ( '' === $text || ! is_numeric( $text ) ) {
+			delete_post_meta( $post_id, self::RADIUS_META_KEY );
+			return;
+		}
+
+		$value = (float) $text;
+
+		if ( $value <= 0 ) {
+			delete_post_meta( $post_id, self::RADIUS_META_KEY );
+			return;
+		}
+
+		$miles = ( 'km' === self::distance_unit() ) ? $value / self::KM_PER_MILE : $value;
+
+		if ( $miles > self::MAX_RADIUS_MILES ) {
+			$miles = (float) self::MAX_RADIUS_MILES;
+		}
+
+		update_post_meta( $post_id, self::RADIUS_META_KEY, self::format_radius( $miles ) );
+	}
+
+	/**
+	 * Store checked states. Anything outside the checkbox list is dropped.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param mixed $raw     Posted values.
+	 * @return void
+	 */
+	private static function set_states( $post_id, $raw ) {
+		$post_id = (int) $post_id;
+		$clean   = array();
+
+		if ( is_array( $raw ) ) {
+			foreach ( $raw as $code ) {
+				if ( ! is_scalar( $code ) ) {
+					continue;
+				}
+
+				$code = strtoupper( sanitize_key( (string) $code ) );
+
+				if ( self::is_state_code( $code ) ) {
+					$clean[] = $code;
+				}
+			}
+		}
+
+		$clean = array_values( array_unique( $clean ) );
+		sort( $clean, SORT_STRING );
+
+		if ( empty( $clean ) ) {
+			delete_post_meta( $post_id, self::STATES_META_KEY );
+			return;
+		}
+
+		update_post_meta( $post_id, self::STATES_META_KEY, implode( ',', $clean ) );
+	}
+
+	/**
+	 * Number for a field or meta value, without trailing zeros.
+	 *
+	 * @param float $value Radius.
+	 * @return string
+	 */
+	private static function format_radius( $value ) {
+		$text = number_format( (float) $value, 2, '.', '' );
+
+		return rtrim( rtrim( $text, '0' ), '.' );
+	}
+
+	/**
+	 * Inclusive ZIP3 ranges that belong to one state.
+	 *
+	 * @return array<int, array{0: int, 1: int, 2: string}>
+	 */
+	private static function zip_prefix_ranges() {
+		return array(
+			array( 5, 5, 'NY' ),
+			array( 10, 27, 'MA' ),
+			array( 28, 29, 'RI' ),
+			array( 30, 38, 'NH' ),
+			array( 39, 49, 'ME' ),
+			array( 50, 54, 'VT' ),
+			array( 55, 55, 'MA' ),
+			array( 56, 59, 'VT' ),
+			array( 60, 69, 'CT' ),
+			array( 70, 89, 'NJ' ),
+			array( 100, 149, 'NY' ),
+			array( 150, 196, 'PA' ),
+			array( 197, 199, 'DE' ),
+			array( 200, 200, 'DC' ),
+			array( 201, 201, 'VA' ),
+			array( 202, 205, 'DC' ),
+			array( 206, 219, 'MD' ),
+			array( 220, 246, 'VA' ),
+			array( 247, 268, 'WV' ),
+			array( 270, 289, 'NC' ),
+			array( 290, 299, 'SC' ),
+			array( 300, 319, 'GA' ),
+			array( 320, 349, 'FL' ),
+			array( 350, 369, 'AL' ),
+			array( 370, 385, 'TN' ),
+			array( 386, 397, 'MS' ),
+			array( 398, 399, 'GA' ),
+			array( 400, 427, 'KY' ),
+			array( 430, 459, 'OH' ),
+			array( 460, 479, 'IN' ),
+			array( 480, 499, 'MI' ),
+			array( 500, 528, 'IA' ),
+			array( 530, 549, 'WI' ),
+			array( 550, 567, 'MN' ),
+			array( 569, 569, 'VA' ),
+			array( 570, 577, 'SD' ),
+			array( 580, 588, 'ND' ),
+			array( 590, 599, 'MT' ),
+			array( 600, 629, 'IL' ),
+			array( 630, 658, 'MO' ),
+			array( 660, 679, 'KS' ),
+			array( 680, 693, 'NE' ),
+			array( 700, 714, 'LA' ),
+			array( 716, 729, 'AR' ),
+			array( 730, 749, 'OK' ),
+			array( 750, 799, 'TX' ),
+			array( 800, 816, 'CO' ),
+			array( 820, 831, 'WY' ),
+			array( 832, 838, 'ID' ),
+			array( 840, 847, 'UT' ),
+			array( 850, 865, 'AZ' ),
+			array( 870, 884, 'NM' ),
+			array( 885, 885, 'TX' ),
+			array( 889, 898, 'NV' ),
+			array( 900, 961, 'CA' ),
+			array( 967, 968, 'HI' ),
+			array( 970, 979, 'OR' ),
+			array( 980, 994, 'WA' ),
+			array( 995, 999, 'AK' ),
+		);
 	}
 
 	/**
@@ -272,6 +690,8 @@ class LOW_DL_Zip_Manager {
 		}
 
 		self::set_zips( $post_id, $parsed['valid'] );
+		self::set_radius( $post_id, isset( $_POST['low_dl_service_radius'] ) ? wp_unslash( $_POST['low_dl_service_radius'] ) : '' );
+		self::set_states( $post_id, isset( $_POST['low_dl_service_states'] ) ? wp_unslash( $_POST['low_dl_service_states'] ) : array() );
 	}
 
 	/**

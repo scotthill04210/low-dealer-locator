@@ -25,6 +25,54 @@
 	margin-left: 6px;
 }
 
+.low-dl-service .low-dl-service-radius {
+	margin: 12px 0;
+}
+
+.low-dl-service .low-dl-service-radius label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.low-dl-service .low-dl-service-radius input {
+	width: 8em;
+}
+
+.low-dl-service .low-dl-service-states {
+	margin: 12px 0 16px;
+	padding: 0;
+	border: 0;
+}
+
+.low-dl-service .low-dl-service-states legend {
+	font-weight: 600;
+	padding: 0;
+}
+
+.low-dl-service .low-dl-service-state-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 2px 12px;
+	max-height: 220px;
+	margin-top: 8px;
+	overflow: auto;
+	padding: 8px 12px;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+}
+
+.low-dl-service .low-dl-service-state-list label {
+	display: block;
+	margin: 2px 0;
+}
+
+.low-dl-service .low-dl-zips label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
 .low-dl-zips textarea {
 	width: 100%;
 	min-height: 160px;

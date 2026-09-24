@@ -3,29 +3,31 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.2
+Stable tag: 0.3.3
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
-Attach service-area zip codes to dealer records and show them on a map visitors can search.
+Attach a service area to dealer records and show them on a map visitors can search.
 
 == Description ==
 
-LOW Dealer Locator attaches service-area zip codes to dealer records, publishes
+LOW Dealer Locator attaches a service area to dealer records, publishes
 those dealers as JSON at `/wp-json/low-dealer-locator/v1/dealers`, and shows a
 map locator. A visitor can search by zip code, address, or their current
-location. A zip that a dealer lists is shown first. If none do, the locator
-shows the nearest dealers by distance.
+location. A dealer who lists the zip, covers the point with a radius, or
+serves that state is shown first. If none do, the locator shows the nearest
+dealers by distance.
 
 * Choose which post types are dealers, or register a Dealer Locator post type.
-* Enter service-area zip codes on each dealer, or import them from a CSV file.
+* Give each dealer a radius, US states, zip codes, or any combination. Zip
+  codes can also be imported from a CSV file.
 * Read contact, address, and coordinate values from the plugin's own fields,
   custom post meta, ACF fields, or core post fields.
 * Look up coordinates from a dealer's address when the dealer is saved.
 * Serve a public JSON list of published dealers.
 * Search by zip, street address, or the visitor's location.
-* Show a zip match first, then the nearest dealers, with distance in miles or
-  kilometers.
+* Show dealers who serve the search first, then the nearest dealers, with
+  distance in miles or kilometers.
 * Place the locator with a shortcode, a block, or a widget.
 * Draw the map with the bundled Leaflet library and a configurable tile URL.
   The default tiles are OpenStreetMap.
@@ -37,12 +39,28 @@ shows the nearest dealers by distance.
 2. Open Settings > Dealer Locator. Select the post types that hold dealers, or
    check "Create a Dealer Locator post type". The Instructions tab has the
    full guide.
-3. Edit a dealer and enter zip codes in the Service Area Zip Codes box, or
-   import a CSV on the Import tab.
+3. Edit a dealer and set the Service area box: a radius, checked states, zip
+   codes, or any combination. Zip codes can also be imported on the Import tab.
 4. Add the locator with the shortcode `[low_dealer_locator]`, the Dealer
    Locator block, or the Dealer Locator widget.
 
 == Frequently Asked Questions ==
+
+= How does a dealer define a service area? =
+
+Open the dealer and use the Service area box. A visitor matches when any of
+these apply:
+
+* The radius covers the search point. Enter a distance in the unit from the
+  Locator tab, up to 500 miles. Leave it blank for no radius. The dealer needs
+  map coordinates for a radius to match.
+* A checked US state contains the visitor zip. Address searches match a state
+  when the lookup includes one. Use my location matches a radius and does not
+  match a state. Canadian provinces are not available.
+* The zip is in the dealer's zip list.
+
+A dealer can use one of these or more than one. The zip list and a checked
+state still match when the dealer has no map coordinates.
 
 = How do I import zip codes with a CSV? =
 
@@ -71,15 +89,16 @@ the plugin's own fields.
 = Why is a dealer missing from distance results? =
 
 Distance results include only dealers that have numeric latitude and longitude.
-Dealers without coordinates are skipped. On dealer list screens, an admin
-notice names the dealers that have no map coordinates and are left out of
-distance results.
+Dealers without coordinates are skipped. On the Dealer Locator settings screen
+and on dealer list screens, Administrators see a notice naming the dealers
+that have no map coordinates. The notice can be closed, and it stays closed
+until that list of dealers changes.
 
 Coordinates are looked up from the address when the dealer is saved. Check
 "Don't auto-geocode this dealer (use the coordinates entered here)" to keep
-the latitude and longitude you entered. A dealer can still appear in a zip
-match without coordinates, because that match uses the zip list rather than
-distance.
+the latitude and longitude you entered. A dealer can still match a listed zip
+or a checked state without coordinates. A radius cannot, because that match
+uses distance from the dealer's address.
 
 = Does the address lookup need a paid service? =
 
@@ -109,13 +128,16 @@ replace the geocoder URL on the Geocoding tab.
           },
           "lat": 30.2672,
           "lng": -97.7431,
-          "zip_codes": ["78701", "78702"]
+          "zip_codes": ["78701", "78702"],
+          "service_radius": 25,
+          "service_states": ["TX"]
         }
       ]
     }
 
 `lat` and `lng` are null when the dealer has no coordinates. `zip_codes` is
-the dealer's service-area list.
+the dealer's zip list. `service_radius` is the radius in miles, or null when
+the dealer has none. `service_states` is a list of USPS abbreviations.
 
 = What shortcode options are there? =
 
@@ -226,6 +248,10 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.3 =
+* A dealer service area can be a radius, US states, zip codes, or any combination.
+* The Instructions tab explains how those three choices match a search.
 
 = 0.3.2 =
 * Settings includes an Instructions tab with the full usage guide.

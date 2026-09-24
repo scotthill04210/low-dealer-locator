@@ -66,6 +66,8 @@ if ( ! function_exists( 'low_dl_uninstall_site' ) ) {
 
 		$meta_keys = array(
 			'_low_dl_zip_codes',
+			'_low_dl_service_radius',
+			'_low_dl_service_states',
 			'_low_dl_email',
 			'_low_dl_website',
 			'_low_dl_phone',

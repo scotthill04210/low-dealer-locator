@@ -1074,7 +1074,7 @@ class LOW_DL_Settings {
 		);
 		?>
 		<div class="low-dl-docs">
-			<p><?php echo esc_html__( 'LOW Dealer Locator attaches service-area zip codes to dealer records and shows those dealers on a map. Visitors can search by zip code, street address, or their current location.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'LOW Dealer Locator attaches a service area to dealer records and shows those dealers on a map. A service area can be a radius, US states, zip codes, or any combination. Visitors can search by zip code, street address, or their current location.', 'low-dealer-locator' ); ?></p>
 			<ul class="low-dl-docs-contents">
 				<li><a href="#low-dl-docs-start"><?php echo esc_html__( 'Start here', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-dealer"><?php echo esc_html__( 'Add a dealer', 'low-dealer-locator' ); ?></a></li>
@@ -1113,7 +1113,7 @@ class LOW_DL_Settings {
 
 			<h2 id="low-dl-docs-dealer"><?php echo esc_html__( 'Add a dealer', 'low-dealer-locator' ); ?></h2>
 			<p><?php echo esc_html__( 'Open the dealer and set the title. The title is the name visitors see.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'In Service Area Zip Codes, enter the zips this dealer serves. Separate them with commas, spaces, or new lines. A ZIP+4 such as 30301-1234 is stored as 30301. A 3-digit or 4-digit number is padded with leading zeros. Duplicates are removed. A value that is not a zip is skipped, and a notice lists the skipped values after you save.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'In Service area, use any combination of a radius, checked states, and zip codes. A visitor matches when their search point is inside the radius, their zip is in a checked state, or their zip is listed. The radius uses the distance unit from the Locator tab and needs map coordinates on the dealer. Leave the radius blank for none. Zip codes can be separated by commas, spaces, or new lines. A ZIP+4 such as 30301-1234 is stored as 30301. A 3-digit or 4-digit number is padded with leading zeros. Duplicates are removed. A value that is not a zip is skipped, and a notice lists the skipped values after you save.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'In Dealer Details, fill in email, website, phone, street, city, state, ZIP code, latitude, and longitude. A field appears there only when Field Mapping leaves it set to Plugin field. The plugin fills latitude and longitude from the address when you save, unless you check “Don\'t auto-geocode this dealer (use the coordinates entered here)”.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-import"><?php echo esc_html__( 'Import zip codes', 'low-dealer-locator' ); ?></h2>
@@ -1224,7 +1224,7 @@ class LOW_DL_Settings {
 
 			<h2 id="low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></h2>
 			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'A zip that a dealer lists is shown first, under the heading for dealers who serve that zip. If no dealer lists it, the locator shows the nearest dealers that have coordinates.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'A dealer who lists the zip, checks that state, or covers the search point with a radius is shown first, under the heading for dealers who serve the area. If none do, the locator shows the nearest dealers that have coordinates. A state matches a zip search, and an address search when the lookup includes a state. Use my location matches a radius, and it does not match a state.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An address search and Use my location go straight to the nearest dealers. Use my location is available on an https page when the browser allows location. Those coordinates are sent only to this site and are not stored.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An empty search or a value that is not a 5-digit zip shows a message on the page and does not look anything up. If nothing is within the maximum distance, the empty-state message is shown. The map does not zoom with the mouse wheel until the visitor clicks or focuses the map.', 'low-dealer-locator' ); ?></p>
 

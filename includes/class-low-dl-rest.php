@@ -210,7 +210,9 @@ class LOW_DL_REST {
 				'address'   => $row['address'],
 				'lat'       => $row['lat'],
 				'lng'       => $row['lng'],
-				'zip_codes' => array_values( LOW_DL_Zip_Manager::get_zips( $id ) ),
+				'zip_codes'       => array_values( LOW_DL_Zip_Manager::get_zips( $id ) ),
+				'service_radius' => LOW_DL_Zip_Manager::get_radius_miles( $id ),
+				'service_states' => LOW_DL_Zip_Manager::get_states( $id ),
 			);
 		}
 
@@ -340,27 +342,44 @@ class LOW_DL_REST {
 		$dealers = self::get_dealers();
 		$type    = (string) $type;
 		$value   = (string) $value;
+		$zip     = '';
+		$state   = '';
+		$origin  = null;
 
 		if ( 'zip' === $type ) {
-			$matches = self::zip_matches( $dealers, $value );
-
-			if ( ! empty( $matches ) ) {
-				return self::search_payload(
-					'zip_match',
-					$type,
-					$value,
-					self::centroid_origin( $value ),
-					LOW_DL_Settings::get_text( 'heading_covered' ),
-					'',
-					$matches
-				);
-			}
-
-			$origin = self::origin_for_unmatched_zip( $value );
+			$zip    = $value;
+			$state  = LOW_DL_Zip_Manager::state_for_zip( $value );
+			$origin = self::centroid_origin( $value );
 		} elseif ( 'address' === $type ) {
 			$origin = self::origin_for_address( $value );
+
+			if ( is_wp_error( $origin ) ) {
+				return $origin;
+			}
+
+			if ( is_array( $origin ) && isset( $origin['state'] ) && is_string( $origin['state'] ) ) {
+				$state = $origin['state'];
+			}
 		} else {
 			$origin = self::origin_for_coords( $value );
+		}
+
+		$covered = self::covered_dealers( $dealers, $zip, $state, is_array( $origin ) ? $origin : null );
+
+		if ( ! empty( $covered ) ) {
+			return self::search_payload(
+				'zip_match',
+				$type,
+				$value,
+				is_array( $origin ) ? $origin : null,
+				LOW_DL_Settings::get_text( 'heading_covered' ),
+				'',
+				$covered
+			);
+		}
+
+		if ( 'zip' === $type && ! is_array( $origin ) ) {
+			$origin = self::origin_for_unmatched_zip( $value );
 		}
 
 		if ( is_wp_error( $origin ) ) {
@@ -521,28 +540,69 @@ class LOW_DL_REST {
 	}
 
 	/**
-	 * Dealers whose zip list contains this zip, in the existing name order.
+	 * Dealers who cover this search by zip list, state, or radius.
 	 *
-	 * @param array  $dealers Cached dealers.
-	 * @param string $zip     Five-digit zip.
+	 * @param array      $dealers Cached dealers.
+	 * @param string     $zip     Visitor zip, or an empty string.
+	 * @param string     $state   Visitor state abbreviation, or an empty string.
+	 * @param array|null $origin  Origin lat and lng when known.
 	 * @return array
 	 */
-	private static function zip_matches( $dealers, $zip ) {
+	private static function covered_dealers( $dealers, $zip, $state, $origin ) {
 		$matches = array();
+		$state   = LOW_DL_Zip_Manager::is_state_code( $state ) ? $state : '';
 
 		foreach ( $dealers as $dealer ) {
-			if ( ! is_array( $dealer ) ) {
+			if ( ! is_array( $dealer ) || ! self::dealer_covers( $dealer, $zip, $state, $origin ) ) {
 				continue;
 			}
 
-			$codes = ( isset( $dealer['zip_codes'] ) && is_array( $dealer['zip_codes'] ) ) ? $dealer['zip_codes'] : array();
-
-			if ( in_array( $zip, $codes, true ) ) {
-				$matches[] = self::public_dealer( $dealer, null );
-			}
+			$matches[] = self::public_dealer( $dealer, null );
 		}
 
 		return $matches;
+	}
+
+	/**
+	 * Whether one dealer serves this zip, state, or point.
+	 *
+	 * @param array      $dealer Cached dealer.
+	 * @param string     $zip    Visitor zip, or an empty string.
+	 * @param string     $state  Visitor state abbreviation, or an empty string.
+	 * @param array|null $origin Origin lat and lng when known.
+	 * @return bool
+	 */
+	private static function dealer_covers( $dealer, $zip, $state, $origin ) {
+		$codes = ( isset( $dealer['zip_codes'] ) && is_array( $dealer['zip_codes'] ) ) ? $dealer['zip_codes'] : array();
+
+		if ( '' !== $zip && in_array( $zip, $codes, true ) ) {
+			return true;
+		}
+
+		$states = ( isset( $dealer['service_states'] ) && is_array( $dealer['service_states'] ) ) ? $dealer['service_states'] : array();
+
+		if ( '' !== $state && in_array( $state, $states, true ) ) {
+			return true;
+		}
+
+		$radius = isset( $dealer['service_radius'] ) ? $dealer['service_radius'] : null;
+
+		if ( ! is_numeric( $radius ) || (float) $radius <= 0 || ! is_array( $origin ) ) {
+			return false;
+		}
+
+		$olat = isset( $origin['lat'] ) ? $origin['lat'] : null;
+		$olng = isset( $origin['lng'] ) ? $origin['lng'] : null;
+		$dlat = isset( $dealer['lat'] ) ? $dealer['lat'] : null;
+		$dlng = isset( $dealer['lng'] ) ? $dealer['lng'] : null;
+
+		if ( ! is_numeric( $olat ) || ! is_numeric( $olng ) || ! is_numeric( $dlat ) || ! is_numeric( $dlng ) ) {
+			return false;
+		}
+
+		$distance = self::haversine( (float) $olat, (float) $olng, (float) $dlat, (float) $dlng, 'mi' );
+
+		return $distance <= (float) $radius;
 	}
 
 	/**
@@ -648,10 +708,16 @@ class LOW_DL_REST {
 			return null;
 		}
 
-		return array(
+		$origin = array(
 			'lat' => (float) $result['lat'],
 			'lng' => (float) $result['lng'],
 		);
+
+		if ( isset( $result['state'] ) && is_string( $result['state'] ) && LOW_DL_Zip_Manager::is_state_code( $result['state'] ) ) {
+			$origin['state'] = $result['state'];
+		}
+
+		return $origin;
 	}
 
 	/**
@@ -761,7 +827,7 @@ class LOW_DL_REST {
 	 * @return array
 	 */
 	private static function public_dealer( $dealer, $distance ) {
-		unset( $dealer['zip_codes'] );
+		unset( $dealer['zip_codes'], $dealer['service_radius'], $dealer['service_states'] );
 
 		$dealer['id']       = isset( $dealer['id'] ) ? (int) $dealer['id'] : 0;
 		$dealer['lat']      = self::coord_or_null( isset( $dealer['lat'] ) ? $dealer['lat'] : null );
