@@ -292,7 +292,7 @@ class LOW_DL_Shortcode {
 	}
 
 	/**
-	 * Uploaded dealer marker, scaled so the long side is at most 48 pixels.
+	 * Uploaded dealer marker, scaled so the long side matches the saved size.
 	 *
 	 * @param array $settings Saved settings.
 	 * @return array{url: string, width: int, height: int}
@@ -323,13 +323,16 @@ class LOW_DL_Shortcode {
 			$height = 32;
 		}
 
-		$longest = max( $width, $height );
+		$size = isset( $settings['marker_image_size'] ) ? absint( $settings['marker_image_size'] ) : 48;
 
-		if ( $longest > 48 ) {
-			$scale  = 48 / $longest;
-			$width  = max( 1, (int) round( $width * $scale ) );
-			$height = max( 1, (int) round( $height * $scale ) );
+		if ( $size < 16 || $size > 128 ) {
+			$size = 48;
 		}
+
+		$longest = max( $width, $height );
+		$scale   = $size / $longest;
+		$width   = max( 1, (int) round( $width * $scale ) );
+		$height  = max( 1, (int) round( $height * $scale ) );
 
 		return array(
 			'url'    => $src[0],

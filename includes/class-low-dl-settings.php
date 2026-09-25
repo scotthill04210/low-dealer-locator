@@ -39,6 +39,7 @@ class LOW_DL_Settings {
 		'marker_style',
 		'marker_color',
 		'marker_image_id',
+		'marker_image_size',
 		'searched_marker_color',
 		'default_zoom',
 		'tile_url',
@@ -83,6 +84,7 @@ class LOW_DL_Settings {
 			'marker_style'             => 'circle',
 			'marker_color'             => '#d9480f',
 			'marker_image_id'          => 0,
+			'marker_image_size'        => 48,
 			'searched_marker_color'    => '#1c7ed6',
 			'default_zoom'             => 4,
 			'tile_url'                 => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -505,6 +507,7 @@ class LOW_DL_Settings {
 		$clean['marker_style']          = $this->sanitize_marker_style( isset( $input['marker_style'] ) ? $input['marker_style'] : '' );
 		$clean['marker_color']          = $this->sanitize_hex_color( isset( $input['marker_color'] ) ? $input['marker_color'] : '', '#d9480f' );
 		$clean['marker_image_id']       = $this->sanitize_marker_image_id( isset( $input['marker_image_id'] ) ? $input['marker_image_id'] : 0 );
+		$clean['marker_image_size']     = $this->sanitize_marker_image_size( isset( $input['marker_image_size'] ) ? $input['marker_image_size'] : 48 );
 		$clean['searched_marker_color'] = $this->sanitize_hex_color( isset( $input['searched_marker_color'] ) ? $input['searched_marker_color'] : '', '#1c7ed6' );
 		$clean['default_zoom']          = $zoom;
 		$clean['tile_url']         = $this->sanitize_tile_url( isset( $input['tile_url'] ) ? $input['tile_url'] : '' );
@@ -551,6 +554,30 @@ class LOW_DL_Settings {
 		}
 
 		return $id;
+	}
+
+	/**
+	 * Longest side of an uploaded dealer marker, from 16 to 128 pixels.
+	 *
+	 * @param mixed $value Posted size.
+	 * @return int
+	 */
+	private function sanitize_marker_image_size( $value ) {
+		$size = 48;
+
+		if ( is_scalar( $value ) && is_numeric( wp_unslash( (string) $value ) ) ) {
+			$size = absint( $value );
+		}
+
+		if ( $size < 16 ) {
+			return 16;
+		}
+
+		if ( $size > 128 ) {
+			return 128;
+		}
+
+		return $size;
 	}
 
 	/**
@@ -937,6 +964,11 @@ class LOW_DL_Settings {
 		$searched     = self::color_for_input( 'searched_marker_color', '#1c7ed6' );
 		$marker_style = self::get( 'marker_style' );
 		$image_id     = absint( self::get( 'marker_image_id' ) );
+		$image_size   = absint( self::get( 'marker_image_size' ) );
+
+		if ( $image_size < 16 || $image_size > 128 ) {
+			$image_size = 48;
+		}
 		$preview      = '';
 
 		if ( ! is_string( $marker_style ) || ! in_array( $marker_style, array( 'circle', 'pin', 'image' ), true ) ) {
@@ -1118,7 +1150,20 @@ class LOW_DL_Settings {
 						data-button="<?php echo esc_attr__( 'Use this image', 'low-dealer-locator' ); ?>"
 					><?php echo esc_html__( 'Select image', 'low-dealer-locator' ); ?></button>
 					<button type="button" class="button" id="low-dl-marker-image-remove"<?php echo ( '' === $preview ) ? ' hidden="hidden"' : ''; ?>><?php echo esc_html__( 'Remove image', 'low-dealer-locator' ); ?></button>
-					<p class="description"><?php echo esc_html__( 'A PNG with a transparent background works best. The bottom center of the image sits on the dealer. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></p>
+					<p>
+						<label for="low-dl-marker-image-size"><?php echo esc_html__( 'Image size', 'low-dealer-locator' ); ?></label>
+						<input
+							type="number"
+							class="small-text"
+							id="low-dl-marker-image-size"
+							name="<?php echo esc_attr( $name ); ?>[marker_image_size]"
+							value="<?php echo esc_attr( (string) $image_size ); ?>"
+							min="16"
+							max="128"
+							step="1"
+						/>
+					</p>
+					<p class="description"><?php echo esc_html__( 'Longest side in pixels, from 16 to 128. The default is 48. The image keeps its shape, and the bottom center sits on the dealer. A PNG with a transparent background works best. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -1341,7 +1386,7 @@ class LOW_DL_Settings {
 				<li><?php echo esc_html__( 'Distance unit: miles or kilometers.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Headings and the empty-state message. A blank field uses the placeholder text.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map height in pixels, from 200 to 1200. The default is 450.', 'low-dealer-locator' ); ?></li>
-				<li><?php echo esc_html__( 'Dealer marker: a colored circle, the standard map pin, or one uploaded image. OpenStreetMap does not publish other marker icons. Marker color applies to the circle. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Dealer marker: a colored circle, the standard map pin, or one uploaded image. OpenStreetMap does not publish other marker icons. Marker color applies to the circle. Image size is the longest side in pixels, from 16 to 128. The default is 48. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Searched marker color. The default is blue. Hover or click that marker to see Searched location.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Default zoom, from 1 to 18. The default is 4.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map tile URL. The default is OpenStreetMap and must include {z}, {x}, and {y}. Public OpenStreetMap tiles are for light use.', 'low-dealer-locator' ); ?></li>
@@ -1360,7 +1405,7 @@ class LOW_DL_Settings {
 			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A search marks that place and shows a pin for each matching dealer. Hover or click the searched marker to see Searched location.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'A dealer who lists the zip, checks that state, or covers the search point with a radius is shown first, under the heading for dealers who serve the area. If none do, the locator shows the nearest dealers that have coordinates. A state matches a zip search, and an address search when the lookup includes a state. Use my location matches a radius, and it does not match a state.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An address search and Use my location go straight to the nearest dealers. Use my location is available on an https page when the browser allows location. Those coordinates are sent only to this site and are not stored.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'Clicking a dealer pin opens a popup with the dealer\'s name, address, phone, email, and website. After a search, the popup also shows the distance. A phone, email, or website line appears only when that dealer has one.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Hovering a dealer pin shows the dealer name. Clicking a dealer pin opens a popup with the dealer\'s name, address, phone, email, and website. After a search, the popup also shows the distance. A phone, email, or website line appears only when that dealer has one.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An empty search or a value that is not a 5-digit zip shows a message on the page and does not look anything up. If nothing is within the maximum distance, the empty-state message is shown. The map does not zoom with the mouse wheel until the visitor clicks or focuses the map.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-json"><?php echo esc_html__( 'Dealer list address', 'low-dealer-locator' ); ?></h2>

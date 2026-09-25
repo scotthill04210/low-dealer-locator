@@ -389,6 +389,8 @@
 						pin.shadowSize = [41, 41];
 					}
 
+					pin.tooltipAnchor = [0, -41];
+
 					return window.L.icon(pin);
 				}
 			}
@@ -403,7 +405,8 @@
 						iconUrl: imageUrl,
 						iconSize: [width, height],
 						iconAnchor: [Math.round(width / 2), height],
-						popupAnchor: [0, -height]
+						popupAnchor: [0, -height],
+						tooltipAnchor: [0, -height]
 					});
 				}
 			}
@@ -413,14 +416,25 @@
 				html: '<span class="low-dl-marker"></span>',
 				iconSize: [24, 24],
 				iconAnchor: [12, 24],
-				popupAnchor: [0, -22]
+				popupAnchor: [0, -22],
+				tooltipAnchor: [0, -24]
 			});
 		}
 
 		function addDealerMarker(dealer, point, unit) {
+			var title = asText(dealer && dealer.name);
 			var marker = window.L.marker(point, {
-				icon: dealerIcon
+				icon: dealerIcon,
+				alt: title
 			});
+
+			if (title) {
+				marker.bindTooltip(labelNode(title), {
+					direction: 'top',
+					offset: [0, -4],
+					opacity: 1
+				});
+			}
 
 			marker.bindPopup(popupNode(dealer, unit), {
 				minWidth: 180,

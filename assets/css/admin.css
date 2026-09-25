@@ -36,6 +36,10 @@
 	margin-left: 6px;
 }
 
+#low-dl-marker-image-row p label {
+	margin-right: 6px;
+}
+
 .low-dl-service .low-dl-service-radius {
 	margin: 12px 0;
 }
