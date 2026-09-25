@@ -1177,7 +1177,7 @@ class LOW_DL_Settings {
 						name="<?php echo esc_attr( $name ); ?>[searched_marker_color]"
 						value="<?php echo esc_attr( $searched ); ?>"
 					/>
-					<p class="description"><?php echo esc_html__( 'The zip, address, or location that was searched. Hover or click that marker to see Searched location.', 'low-dealer-locator' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'The zip, address, or location that was searched. Hover or click that marker to see the search text.', 'low-dealer-locator' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -1387,7 +1387,7 @@ class LOW_DL_Settings {
 				<li><?php echo esc_html__( 'Headings and the empty-state message. A blank field uses the placeholder text.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map height in pixels, from 200 to 1200. The default is 450.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Dealer marker: a colored circle, the standard map pin, or one uploaded image. OpenStreetMap does not publish other marker icons. Marker color applies to the circle. Image size is the longest side in pixels, from 16 to 128. The default is 48. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></li>
-				<li><?php echo esc_html__( 'Searched marker color. The default is blue. Hover or click that marker to see Searched location.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Searched marker color. The default is blue. Hover or click that marker to see the zip, address, or coordinates that were searched.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Default zoom, from 1 to 18. The default is 4.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map tile URL. The default is OpenStreetMap and must include {z}, {x}, and {y}. Public OpenStreetMap tiles are for light use.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Extra map attribution is added after © OpenStreetMap contributors.', 'low-dealer-locator' ); ?></li>
@@ -1402,7 +1402,7 @@ class LOW_DL_Settings {
 			<p><?php echo esc_html__( 'Height is 200 to 1200 pixels. Zoom is 1 to 18. A missing or out-of-range value uses the Locator tab. The Dealer Locator block and the Dealer Locator widget accept the same height and zoom. Leave them blank to use the Locator tab.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></h2>
-			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A search marks that place and shows a pin for each matching dealer. Hover or click the searched marker to see Searched location.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A search marks that place and shows a pin for each matching dealer. Hover or click the searched marker to see the zip, address, or coordinates that were searched.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'A dealer who lists the zip, checks that state, or covers the search point with a radius is shown first, under the heading for dealers who serve the area. If none do, the locator shows the nearest dealers that have coordinates. A state matches a zip search, and an address search when the lookup includes a state. Use my location matches a radius, and it does not match a state.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An address search and Use my location go straight to the nearest dealers. Use my location is available on an https page when the browser allows location. Those coordinates are sent only to this site and are not stored.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'Hovering a dealer pin shows the dealer name. Clicking a dealer pin opens a popup with the dealer\'s name, address, phone, email, and website. After a search, the popup also shows the distance. A phone, email, or website line appears only when that dealer has one.', 'low-dealer-locator' ); ?></p>

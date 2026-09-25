@@ -318,13 +318,14 @@
 			var occupied = {};
 
 			if (origin) {
+				var label = searchedQueryLabel(data);
+
 				var searched = window.L.marker(origin, {
 					icon: originIcon,
 					keyboard: true,
-					alt: text('searched_location'),
+					alt: label,
 					zIndexOffset: -100
 				});
-				var label = text('searched_location');
 
 				searched.bindTooltip(labelNode(label), {
 					direction: 'top',
@@ -366,6 +367,17 @@
 
 			fitResults(points);
 			map.invalidateSize();
+		}
+
+		function searchedQueryLabel(data) {
+			var query = data && data.query ? data.query : null;
+			var value = query && typeof query.value === 'string' ? query.value.trim() : '';
+
+			if (value) {
+				return value;
+			}
+
+			return text('searched_location');
 		}
 
 		function dealerMarkerIcon() {
