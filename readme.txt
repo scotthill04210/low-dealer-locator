@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.10
+Stable tag: 0.3.11
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -24,7 +24,8 @@ dealers by distance.
 * Give each dealer a radius, US states, zip codes, or any combination. Zip
   codes can also be imported from a CSV file.
 * Read contact, address, and coordinate values from the plugin's own fields,
-  custom post meta, ACF fields, or core post fields.
+  custom post meta, ACF fields, or core post fields. A one-line full address
+  can replace the separate street, city, state, and ZIP.
 * Look up coordinates from a dealer's address when the dealer is saved.
 * Serve a public JSON list of published dealers that have a service location.
 * Search by zip, street address, or the visitor's location.
@@ -90,9 +91,16 @@ not valid zip codes are skipped.
 = How do I map my existing custom or ACF fields? =
 
 Open the Field Mapping tab. For each dealer post type, point email, website,
-phone, street, city, state, zip, latitude, and longitude at a plugin field, a
-custom field (post meta), an ACF field, or a core post field. The dealer name
-is always the post title.
+phone, street, city, state, zip, full address, latitude, and longitude at a
+plugin field, a custom field (post meta), an ACF field, or a core post field.
+The dealer name is always the post title.
+
+A full address is one line, such as 7617 Duncan Bridge Rd. Cleveland, GA 30528.
+Check "Use this address instead of Street, City, State, and ZIP when it has a
+value" when that line is the physical location. The map, the popup, and
+coordinate lookup then use it. An empty full address leaves the separate
+address fields in place. Save each dealer again so existing coordinates are
+looked up from the full address.
 
 Mapping is read-only. The plugin reads the mapped meta, ACF, and core values
 when it builds the locator. The Dealer Details box and the geocoder write only
@@ -267,6 +275,10 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.11 =
+* Field Mapping can read a one-line full address, such as 7617 Duncan Bridge Rd. Cleveland, GA 30528.
+* That address can replace Street, City, State, and ZIP for the map, the popup, and coordinate lookup.
 
 = 0.3.10 =
 * Dealer names show characters such as & instead of HTML codes like &#038;.

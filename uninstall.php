@@ -75,6 +75,7 @@ if ( ! function_exists( 'low_dl_uninstall_site' ) ) {
 			'_low_dl_city',
 			'_low_dl_state',
 			'_low_dl_postal_code',
+			'_low_dl_full_address',
 			'_low_dl_lat',
 			'_low_dl_lng',
 			'_low_dl_geo_manual',

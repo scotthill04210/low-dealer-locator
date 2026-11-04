@@ -1293,7 +1293,7 @@ class LOW_DL_Settings {
 			<h2 id="low-dl-docs-dealer"><?php echo esc_html__( 'Add a dealer', 'low-dealer-locator' ); ?></h2>
 			<p><?php echo esc_html__( 'Open the dealer and set the title. The title is the name visitors see.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'In Service area, use any combination of a radius, checked states, and zip codes. A visitor matches when their search point is inside the radius, their zip is in a checked state, or their zip is listed. The radius uses the distance unit from the Locator tab and needs map coordinates on the dealer. Leave the radius blank for none. Zip codes can be separated by commas, spaces, or new lines. A ZIP+4 such as 30301-1234 is stored as 30301. A 3-digit or 4-digit number is padded with leading zeros. Duplicates are removed. A value that is not a zip is skipped, and a notice lists the skipped values after you save.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'In Dealer Details, fill in email, website, phone, street, city, state, ZIP code, latitude, and longitude. A field appears there only when Field Mapping leaves it set to Plugin field. The plugin fills latitude and longitude from the address when you save, unless you check “Don\'t auto-geocode this dealer (use the coordinates entered here)”.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'In Dealer Details, fill in email, website, phone, street, city, state, ZIP code, full address, latitude, and longitude. A field appears there only when Field Mapping leaves it set to Plugin field. The plugin fills latitude and longitude from the address when you save, unless you check “Don\'t auto-geocode this dealer (use the coordinates entered here)”. When Full address is set to override, a value there is the physical location.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-import"><?php echo esc_html__( 'Import zip codes', 'low-dealer-locator' ); ?></h2>
 			<p>
@@ -1334,7 +1334,7 @@ class LOW_DL_Settings {
 				);
 				?>
 			</p>
-			<p><?php echo esc_html__( 'For each dealer post type, set Email, Website, Phone, Street, City, State, ZIP code, Latitude, and Longitude. The dealer name is always the post title.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'For each dealer post type, set Email, Website, Phone, Street, City, State, ZIP code, Full address, Latitude, and Longitude. The dealer name is always the post title.', 'low-dealer-locator' ); ?></p>
 			<ul>
 				<li><?php echo esc_html__( 'Plugin field stores the value in Dealer Details.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Custom field (post meta) reads a meta key you name.', 'low-dealer-locator' ); ?></li>
@@ -1342,6 +1342,7 @@ class LOW_DL_Settings {
 				<li><?php echo esc_html__( 'Core field reads the title, excerpt, or content.', 'low-dealer-locator' ); ?></li>
 			</ul>
 			<p><?php echo esc_html__( 'Mapping reads those other sources. Dealer Details and the geocoder write the plugin\'s own fields. A custom field or ACF field left blank is read from the plugin field instead. Select at least one dealer post type on the General tab before this tab has anything to map.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Full address reads one line, such as 7617 Duncan Bridge Rd. Cleveland, GA 30528. Check “Use this address instead of Street, City, State, and ZIP when it has a value” when that line is the physical location. The map, the popup, and coordinate lookup then use it. An empty full address leaves the separate address fields in place. Save each dealer again so existing coordinates are looked up from the full address.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-geo"><?php echo esc_html__( 'Look up coordinates', 'low-dealer-locator' ); ?></h2>
 			<p><?php echo esc_html__( 'Distance search needs a numeric latitude and longitude. Dealers without coordinates can still match a zip search. They are left out of distance results.', 'low-dealer-locator' ); ?></p>
@@ -1362,7 +1363,7 @@ class LOW_DL_Settings {
 				?>
 			</p>
 			<p><?php echo esc_html__( 'A paid or self-hosted service that accepts the same search URL can be entered in Geocoder URL. The public Nominatim service does not need an API key. Leave API key blank. A later blank key keeps a key that is already saved. Check “Remove the saved key” to clear it.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'Saving a dealer queues a lookup from the street, city, state, and ZIP code. The queue runs on WP-Cron. If WP-Cron is turned off, a server cron job must request wp-cron.php. On the Dealer Locator settings screen and on dealer list screens, administrators see a notice naming published dealers that still have no coordinates. The notice has a close button. It stays closed until that list of dealers changes.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Saving a dealer queues a lookup from the street, city, state, and ZIP code. When Full address is set to override and has a value, that line is used instead. The queue runs on WP-Cron. If WP-Cron is turned off, a server cron job must request wp-cron.php. On the Dealer Locator settings screen and on dealer list screens, administrators see a notice naming published dealers that still have no coordinates. The notice has a close button. It stays closed until that list of dealers changes.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-locator"><?php echo esc_html__( 'Set how the locator behaves', 'low-dealer-locator' ); ?></h2>
 			<p>

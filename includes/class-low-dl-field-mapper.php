@@ -88,6 +88,10 @@ class LOW_DL_Field_Mapper {
 				'label' => __( 'ZIP code', 'low-dealer-locator' ),
 				'type'  => 'text',
 			),
+			'full_address' => array(
+				'label' => __( 'Full address', 'low-dealer-locator' ),
+				'type'  => 'text',
+			),
 			'lat'     => array(
 				'label' => __( 'Latitude', 'low-dealer-locator' ),
 				'type'  => 'lat',
@@ -107,15 +111,16 @@ class LOW_DL_Field_Mapper {
 	 */
 	public static function own_key( $data_point ) {
 		$keys = array(
-			'email'   => '_low_dl_email',
-			'website' => '_low_dl_website',
-			'phone'   => '_low_dl_phone',
-			'street'  => '_low_dl_street',
-			'city'    => '_low_dl_city',
-			'state'   => '_low_dl_state',
-			'zip'     => '_low_dl_postal_code',
-			'lat'     => '_low_dl_lat',
-			'lng'     => '_low_dl_lng',
+			'email'        => '_low_dl_email',
+			'website'      => '_low_dl_website',
+			'phone'        => '_low_dl_phone',
+			'street'       => '_low_dl_street',
+			'city'         => '_low_dl_city',
+			'state'        => '_low_dl_state',
+			'zip'          => '_low_dl_postal_code',
+			'full_address' => '_low_dl_full_address',
+			'lat'          => '_low_dl_lat',
+			'lng'          => '_low_dl_lng',
 		);
 
 		return isset( $keys[ $data_point ] ) ? $keys[ $data_point ] : '';
@@ -214,12 +219,7 @@ class LOW_DL_Field_Mapper {
 			'email'   => self::get_value( $post->ID, 'email' ),
 			'website' => self::get_value( $post->ID, 'website' ),
 			'phone'   => self::get_value( $post->ID, 'phone' ),
-			'address' => array(
-				'street' => self::get_value( $post->ID, 'street' ),
-				'city'   => self::get_value( $post->ID, 'city' ),
-				'state'  => self::get_value( $post->ID, 'state' ),
-				'zip'    => self::get_value( $post->ID, 'zip' ),
-			),
+			'address' => self::get_address( $post->ID ),
 			'lat'     => self::get_value( $post->ID, 'lat' ),
 			'lng'     => self::get_value( $post->ID, 'lng' ),
 		);
@@ -295,10 +295,22 @@ class LOW_DL_Field_Mapper {
 					$key = '';
 				}
 
-				$clean[ $post_type ][ $data_point ] = array(
+				$stored = array(
 					'source' => $source,
 					'key'    => $key,
 				);
+
+				if ( 'full_address' === $data_point ) {
+					$override = '0';
+
+					if ( isset( $row['override'] ) && is_scalar( $row['override'] ) && '1' === (string) wp_unslash( $row['override'] ) ) {
+						$override = '1';
+					}
+
+					$stored['override'] = $override;
+				}
+
+				$clean[ $post_type ][ $data_point ] = $stored;
 			}
 		}
 
@@ -363,6 +375,10 @@ class LOW_DL_Field_Mapper {
 
 		foreach ( self::data_points() as $data_point => $config ) {
 			self::render_mapping_row( $post_type, $data_point, $config['label'] );
+
+			if ( 'full_address' === $data_point ) {
+				self::render_full_address_override( $post_type );
+			}
 		}
 
 		echo '</tbody></table>';
@@ -404,6 +420,235 @@ class LOW_DL_Field_Mapper {
 		self::render_core_control( 'core' === $source, $key_name, $key );
 
 		echo '</td></tr>';
+	}
+
+	/**
+	 * Checkbox that lets one full address replace the separate address parts.
+	 *
+	 * @param string $post_type Post type slug.
+	 * @return void
+	 */
+	private static function render_full_address_override( $post_type ) {
+		$name    = LOW_DL_Settings::OPTION_KEY . '[field_mappings][' . $post_type . '][full_address][override]';
+		$id      = 'low-dl-full-address-override-' . $post_type;
+		$checked = self::full_address_overrides( $post_type );
+
+		echo '<tr class="low-dl-mapping-note">';
+		echo '<td colspan="3">';
+		echo '<label for="' . esc_attr( $id ) . '">';
+		echo '<input type="checkbox" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="1" ' . checked( $checked, true, false ) . ' /> ';
+		echo esc_html__( 'Use this address instead of Street, City, State, and ZIP when it has a value.', 'low-dealer-locator' );
+		echo '</label>';
+		echo '<p class="description">' . esc_html__( 'The value is one line, such as 7617 Duncan Bridge Rd. Cleveland, GA 30528. The map, the popup, and coordinate lookup then use this physical address. Save each dealer again so existing coordinates are looked up from it.', 'low-dealer-locator' ) . '</p>';
+		echo '</td></tr>';
+	}
+
+	/**
+	 * Whether a non-empty full address replaces the separate address parts.
+	 *
+	 * @param string $post_type Post type slug.
+	 * @return bool
+	 */
+	public static function full_address_overrides( $post_type ) {
+		$settings = LOW_DL_Settings::get_all();
+		$stored   = '';
+
+		if ( isset( $settings['field_mappings'][ $post_type ]['full_address']['override'] ) && is_scalar( $settings['field_mappings'][ $post_type ]['full_address']['override'] ) ) {
+			$stored = (string) $settings['field_mappings'][ $post_type ]['full_address']['override'];
+		}
+
+		return '1' === $stored;
+	}
+
+	/**
+	 * Street, city, state, and ZIP, using the full address when that option is on.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array{street: string, city: string, state: string, zip: string}
+	 */
+	public static function get_address( $post_id ) {
+		$post_id = (int) $post_id;
+		$address = array(
+			'street' => self::address_part( $post_id, 'street' ),
+			'city'   => self::address_part( $post_id, 'city' ),
+			'state'  => self::address_part( $post_id, 'state' ),
+			'zip'    => self::address_part( $post_id, 'zip' ),
+		);
+
+		$post = get_post( $post_id );
+
+		if ( ! ( $post instanceof WP_Post ) || ! self::full_address_overrides( $post->post_type ) ) {
+			return $address;
+		}
+
+		$raw = self::get_value( $post_id, 'full_address' );
+
+		if ( ! is_scalar( $raw ) || '' === trim( (string) $raw ) ) {
+			return $address;
+		}
+
+		return self::parse_full_address( (string) $raw );
+	}
+
+	/**
+	 * Split one physical-address line into street, city, state, and ZIP.
+	 *
+	 * @param string $value Address line.
+	 * @return array{street: string, city: string, state: string, zip: string}
+	 */
+	public static function parse_full_address( $value ) {
+		$text = preg_replace( '/\s+/u', ' ', str_replace( array( "\r", "\n", "\t" ), ' ', (string) $value ) );
+
+		if ( ! is_string( $text ) ) {
+			$text = trim( (string) $value );
+		}
+
+		$text = trim( $text );
+		$text = (string) preg_replace( '/(?:,|\s)\s*(?:usa|united states(?: of america)?)\s*$/i', '', $text );
+		$text = rtrim( $text, " \t," );
+
+		$zip = '';
+
+		if ( preg_match( '/(\d{5}(?:-\d{4})?)\s*$/', $text, $zip_match ) ) {
+			$zip  = $zip_match[1];
+			$text = rtrim( substr( $text, 0, -strlen( $zip_match[0] ) ), " \t," );
+		}
+
+		$state = self::take_state( $text );
+		$city  = '';
+
+		$comma = strrpos( $text, ',' );
+
+		if ( false !== $comma ) {
+			$street = trim( substr( $text, 0, $comma ) );
+			$city   = trim( substr( $text, $comma + 1 ) );
+		} else {
+			$split  = self::split_street_city( $text );
+			$street = $split[0];
+			$city   = $split[1];
+		}
+
+		return array(
+			'street' => $street,
+			'city'   => $city,
+			'state'  => $state,
+			'zip'    => $zip,
+		);
+	}
+
+	/**
+	 * One mapped address part as plain text.
+	 *
+	 * @param int    $post_id    Post ID.
+	 * @param string $data_point street, city, state, or zip.
+	 * @return string
+	 */
+	private static function address_part( $post_id, $data_point ) {
+		$value = self::get_value( $post_id, $data_point );
+
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		return trim( (string) $value );
+	}
+
+	/**
+	 * Remove a trailing US state from an address line.
+	 *
+	 * @param string $text Address line without the ZIP. Updated in place.
+	 * @return string USPS abbreviation, or an empty string.
+	 */
+	private static function take_state( &$text ) {
+		$names = array();
+
+		foreach ( LOW_DL_Zip_Manager::state_choices() as $code => $name ) {
+			$names[ strtolower( $name ) ] = $code;
+		}
+
+		uksort(
+			$names,
+			static function ( $left, $right ) {
+				return strlen( $right ) - strlen( $left );
+			}
+		);
+
+		foreach ( $names as $name => $code ) {
+			$pattern = '/(?:,|\s)\s*' . preg_quote( $name, '/' ) . '$/i';
+
+			if ( preg_match( $pattern, $text, $match ) ) {
+				$text = rtrim( substr( $text, 0, -strlen( $match[0] ) ), " \t," );
+
+				return $code;
+			}
+		}
+
+		if ( preg_match( '/(?:,|\s)\s*([A-Za-z]{2})$/', $text, $match ) ) {
+			$code = strtoupper( $match[1] );
+
+			if ( LOW_DL_Zip_Manager::is_state_code( $code ) ) {
+				$text = rtrim( substr( $text, 0, -strlen( $match[0] ) ), " \t," );
+
+				return $code;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Split a street and city that are not separated by a comma.
+	 *
+	 * The city is the text after the last street suffix, such as Rd. or Street.
+	 *
+	 * @param string $text Street and city.
+	 * @return array{0: string, 1: string}
+	 */
+	private static function split_street_city( $text ) {
+		$suffixes = array(
+			'boulevard',
+			'parkway',
+			'highway',
+			'terrace',
+			'avenue',
+			'circle',
+			'street',
+			'court',
+			'place',
+			'trail',
+			'drive',
+			'lane',
+			'road',
+			'pike',
+			'blvd',
+			'pkwy',
+			'hwy',
+			'trl',
+			'ter',
+			'ave',
+			'cir',
+			'ct',
+			'pl',
+			'dr',
+			'ln',
+			'rd',
+			'st',
+			'way',
+		);
+		$pattern  = '/\b(?:' . implode( '|', $suffixes ) . ')\.?(?=\s+\S)/i';
+
+		if ( preg_match_all( $pattern, $text, $matches, PREG_OFFSET_CAPTURE ) ) {
+			$last   = $matches[0][ count( $matches[0] ) - 1 ];
+			$end    = $last[1] + strlen( $last[0] );
+			$street = trim( substr( $text, 0, $end ) );
+			$city   = trim( substr( $text, $end ) );
+
+			if ( '' !== $street && '' !== $city ) {
+				return array( $street, $city );
+			}
+		}
+
+		return array( $text, '' );
 	}
 
 	/**
@@ -754,7 +999,7 @@ class LOW_DL_Field_Mapper {
 	public function render_meta_box( $post ) {
 		$groups  = array(
 			array( 'email', 'website', 'phone' ),
-			array( 'street', 'city', 'state', 'zip' ),
+			array( 'street', 'city', 'state', 'zip', 'full_address' ),
 			array( 'lat', 'lng' ),
 		);
 		$points  = self::data_points();
@@ -855,9 +1100,24 @@ class LOW_DL_Field_Mapper {
 			$extra = ' inputmode="decimal"';
 		}
 
-		echo '<p class="low-dl-details-field">';
+		$field_class = 'low-dl-details-field';
+
+		if ( 'full_address' === $data_point ) {
+			$field_class .= ' low-dl-details-field-wide';
+		}
+
+		echo '<p class="' . esc_attr( $field_class ) . '">';
 		echo '<label for="' . esc_attr( $input_id ) . '">' . esc_html( $label ) . '</label>';
 		echo '<input type="' . esc_attr( $input_type ) . '" id="' . esc_attr( $input_id ) . '" name="' . esc_attr( 'low_dl_details[' . $data_point . ']' ) . '" value="' . esc_attr( (string) $stored ) . '"' . $extra . ' />';
+
+		if ( 'full_address' === $data_point ) {
+			$post = get_post( $post_id );
+
+			if ( $post instanceof WP_Post && self::full_address_overrides( $post->post_type ) ) {
+				echo '<span class="description">' . esc_html__( 'When this has a value, it replaces Street, City, State, and ZIP for the locator.', 'low-dealer-locator' ) . '</span>';
+			}
+		}
+
 		echo '</p>';
 	}
 

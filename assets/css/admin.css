@@ -143,6 +143,14 @@
 	display: none;
 }
 
+.low-dl-mapping .low-dl-mapping-note td {
+	padding-top: 0;
+}
+
+.low-dl-mapping .low-dl-mapping-note .description {
+	margin: 6px 0 0 24px;
+}
+
 .low-dl-details .low-dl-details-fields {
 	display: flex;
 	flex-wrap: wrap;
@@ -153,6 +161,11 @@
 .low-dl-details .low-dl-details-field {
 	flex: 1 1 180px;
 	max-width: 280px;
+}
+
+.low-dl-details .low-dl-details-field-wide {
+	flex-basis: 100%;
+	max-width: none;
 }
 
 .low-dl-details .low-dl-details-field label {

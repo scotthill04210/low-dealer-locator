@@ -68,20 +68,13 @@ class LOW_DL_Geo_Queue {
 	}
 
 	/**
-	 * Street, city, state, and zip from the mapped sources.
+	 * Street, city, state, and zip used for geocoding and the locator.
 	 *
 	 * @param int $post_id Post ID.
 	 * @return array{street: string, city: string, state: string, zip: string}
 	 */
 	public static function get_address( $post_id ) {
-		$post_id = (int) $post_id;
-
-		return array(
-			'street' => self::address_part( $post_id, 'street' ),
-			'city'   => self::address_part( $post_id, 'city' ),
-			'state'  => self::address_part( $post_id, 'state' ),
-			'zip'    => self::address_part( $post_id, 'zip' ),
-		);
+		return LOW_DL_Field_Mapper::get_address( $post_id );
 	}
 
 	/**
@@ -416,23 +409,6 @@ class LOW_DL_Geo_Queue {
 
 		wp_safe_redirect( add_query_arg( 'low_dl_queued', $queued, $redirect ) );
 		exit;
-	}
-
-	/**
-	 * One mapped address part.
-	 *
-	 * @param int    $post_id    Post ID.
-	 * @param string $data_point Data point slug.
-	 * @return string
-	 */
-	private static function address_part( $post_id, $data_point ) {
-		$value = LOW_DL_Field_Mapper::get_value( $post_id, $data_point );
-
-		if ( ! is_scalar( $value ) ) {
-			return '';
-		}
-
-		return trim( (string) $value );
 	}
 
 	/**
