@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.12
+Stable tag: 0.3.13
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -28,10 +28,12 @@ dealers by distance.
   can replace the separate street, city, state, and ZIP.
 * Look up coordinates from a dealer's address when the dealer is saved.
 * Serve a public JSON list of published dealers that have a service location.
-* Search by zip, street address, or the visitor's location.
+* Search by zip, street address, or the visitor's location. Use my location
+  puts the zip it found in the search field, or the coordinates when the zip
+  lookup does not succeed.
 * Show dealers who serve the search first, then the nearest dealers, with
   distance in miles or kilometers. A visitor can choose 5, 10, 25, or 50
-  nearest dealers.
+  nearest dealers. Changing Show updates the current search.
 * Dealer names show characters such as & instead of HTML codes.
 * Place the locator with a shortcode, a block, or a widget.
 * On a dealer, [low_dealer_service_area] shows a Dealer Service Area button to
@@ -74,8 +76,9 @@ these apply:
   Locator tab, up to 500 miles. Leave it blank for no radius. The dealer needs
   map coordinates for a radius to match.
 * A checked US state contains the visitor zip. Address searches match a state
-  when the lookup includes one. Use my location matches a radius and does not
-  match a state. Canadian provinces are not available.
+  when the lookup includes one. Use my location does the same when the Locator
+  option "Match zip codes and states" is checked. Uncheck it to match only a
+  radius, then the closest dealers. Canadian provinces are not available.
 * The zip is in the dealer's zip list.
 
 The same fields are available on the front end with `[low_dealer_service_area]`.
@@ -183,12 +186,18 @@ the dealer has none. `service_states` is a list of USPS abbreviations.
 
 `[low_dealer_service_area]`
 
+`[low_dealer_service_area id="123"]`
+
 `height` is the map height in pixels, from 200 to 1200. `zoom` is the default
 zoom, from 1 to 18. Leave either one out, or pass a value outside that range,
 and the locator uses the map height and default zoom from the Locator tab.
 The Dealer Locator block and widget accept the same two values.
 
-`[low_dealer_service_area]` has no options.
+`id` is the dealer post ID. `post_id` is accepted as the same attribute.
+Leave both out when the shortcode is in that dealer's content. Another plugin
+can call `do_shortcode()` after this plugin has loaded. The
+`low_dl_service_area_post_id` filter can supply the dealer ID, and
+`low_dl_service_area_return_url` can supply the page to open after saving.
 
 = How do I edit a service area on the front end? =
 
@@ -196,8 +205,12 @@ Put `[low_dealer_service_area]` in the content of a dealer. A logged-in person
 who can edit that dealer sees a Dealer Service Area button. The button opens
 the radius, states, and zip codes for that dealer. Save service area stores
 them with the same rules as the Service area box in the dealer editor.
-Visitors who cannot edit the dealer do not see the button. On any other post,
-an editor sees a note that the shortcode belongs on a dealer.
+Visitors who cannot edit the dealer do not see the button.
+
+Another plugin can use `[low_dealer_service_area id="123"]` when the page
+being viewed is not the dealer. Saving returns the editor to the page that
+showed the form. On any other post, an editor who leaves the id out sees a
+note that the shortcode belongs on a dealer.
 
 = How do plugin updates work? =
 
@@ -278,8 +291,11 @@ email from the Geocoding tab, or the site admin email when that field is
 empty. See the Nominatim usage policy
 (https://operations.osmfoundation.org/policies/nominatim/).
 
-Coordinates from "Use my location" are sent only to this site's own search
-endpoint. The plugin does not store them. The plugin sets no cookies.
+Coordinates from "Use my location" are sent to this site's own search
+endpoint. While "Match zip codes and states" is checked on the Locator tab,
+this server also sends those coordinates to the geocoder to find the zip and
+state. The plugin does not store them. Uncheck that option to keep the
+coordinates on this site and match only a radius. The plugin sets no cookies.
 
 If you use another geocoder or tile provider, review that provider's terms and
 privacy policy. The public OpenStreetMap tile and Nominatim services are for
@@ -299,6 +315,12 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.13 =
+* Use my location matches a listed zip, a checked state, or a radius from the visitor's exact location. Uncheck Match zip codes and states on the Locator tab to match only a radius, then the closest dealers.
+* Use my location puts that zip in the search field, or the coordinates when the lookup does not succeed.
+* Changing Show updates the current search. A repeated search uses a saved geocoder result and does not send another geocoder request.
+* Another plugin can show [low_dealer_service_area id="123"]. do_shortcode() works after this plugin has loaded.
 
 = 0.3.12 =
 * [low_dealer_service_area] on a dealer shows a Dealer Service Area button to people who can edit that dealer.

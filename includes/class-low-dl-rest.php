@@ -391,6 +391,7 @@ class LOW_DL_REST {
 		$zip     = '';
 		$state   = '';
 		$origin  = null;
+		$label   = '';
 
 		if ( 'zip' === $type ) {
 			$zip    = $value;
@@ -408,6 +409,16 @@ class LOW_DL_REST {
 			}
 		} else {
 			$origin = self::origin_for_coords( $value );
+
+			if ( is_array( $origin ) && self::location_matches_service_area() ) {
+				$place = self::place_for_coords( $origin );
+				$zip   = $place['zip'];
+				$state = $place['state'];
+
+				if ( '' !== $zip ) {
+					$label = $zip;
+				}
+			}
 		}
 
 		$covered = self::covered_dealers( $dealers, $zip, $state, is_array( $origin ) ? $origin : null );
@@ -420,7 +431,8 @@ class LOW_DL_REST {
 				is_array( $origin ) ? $origin : null,
 				LOW_DL_Settings::get_text( 'heading_covered' ),
 				'',
-				$covered
+				$covered,
+				$label
 			);
 		}
 
@@ -440,7 +452,8 @@ class LOW_DL_REST {
 				null,
 				'',
 				__( 'We couldn\'t find that location. Check the spelling or try a zip code.', 'low-dealer-locator' ),
-				array()
+				array(),
+				$label
 			);
 		}
 
@@ -457,7 +470,7 @@ class LOW_DL_REST {
 			$message = '';
 		}
 
-		return self::search_payload( 'nearest', $type, $value, $origin, $heading, $message, $nearest );
+		return self::search_payload( 'nearest', $type, $value, $origin, $heading, $message, $nearest, $label );
 	}
 
 	/**
@@ -677,19 +690,16 @@ class LOW_DL_REST {
 	 * @return array|WP_Error|null
 	 */
 	private static function origin_for_unmatched_zip( $zip ) {
-		$local = self::centroid_origin( $zip );
-
-		if ( null !== $local ) {
-			return $local;
-		}
-
-		$limited = self::enforce_rate_limit();
-
-		if ( is_wp_error( $limited ) ) {
-			return $limited;
-		}
-
-		return self::interpret_geocode( LOW_DL_Geocoder::zip_to_coords( $zip, true, 3.0 ) );
+		return self::interpret_geocode(
+			LOW_DL_Geocoder::zip_to_coords(
+				$zip,
+				true,
+				3.0,
+				static function () {
+					return self::enforce_rate_limit();
+				}
+			)
+		);
 	}
 
 	/**
@@ -699,13 +709,59 @@ class LOW_DL_REST {
 	 * @return array|WP_Error|null
 	 */
 	private static function origin_for_address( $query ) {
-		$limited = self::enforce_rate_limit();
+		return self::interpret_geocode(
+			LOW_DL_Geocoder::geocode(
+				$query,
+				3.0,
+				static function () {
+					return self::enforce_rate_limit();
+				}
+			)
+		);
+	}
 
-		if ( is_wp_error( $limited ) ) {
-			return $limited;
+	/**
+	 * Whether Use my location should match a zip list and a checked state.
+	 *
+	 * @return bool
+	 */
+	private static function location_matches_service_area() {
+		return 1 === (int) LOW_DL_Settings::get( 'location_service_area' );
+	}
+
+	/**
+	 * Zip and state for a visitor's coordinates.
+	 *
+	 * A lookup failure leaves both empty so the search still uses the radius.
+	 *
+	 * @param array $origin Lat and lng.
+	 * @return array{zip: string, state: string}
+	 */
+	private static function place_for_coords( array $origin ) {
+		$empty = array(
+			'zip'   => '',
+			'state' => '',
+		);
+		$place = LOW_DL_Geocoder::reverse_place(
+			(float) $origin['lat'],
+			(float) $origin['lng'],
+			2.0,
+			static function () {
+				return self::enforce_rate_limit();
+			}
+		);
+
+		if ( ! is_array( $place ) ) {
+			return $empty;
 		}
 
-		return self::interpret_geocode( LOW_DL_Geocoder::geocode( $query, 3.0 ) );
+		$zip   = ( isset( $place['zip'] ) && is_string( $place['zip'] ) && preg_match( '/^\d{5}$/', $place['zip'] ) ) ? $place['zip'] : '';
+		$state = ( isset( $place['state'] ) && is_string( $place['state'] ) && LOW_DL_Zip_Manager::is_state_code( $place['state'] ) ) ? $place['state'] : '';
+
+		return array(
+			'zip'   => $zip,
+			'state' => $state,
+		);
 	}
 
 	/**
@@ -979,9 +1035,10 @@ class LOW_DL_REST {
 	 * @param string     $heading  Heading text.
 	 * @param string     $message  Message text.
 	 * @param array      $dealers  Public dealer rows.
+	 * @param string     $label    Place to show for a coordinate search, such as a zip.
 	 * @return array
 	 */
-	private static function search_payload( $mode, $type, $value, $origin, $heading, $message, $dealers ) {
+	private static function search_payload( $mode, $type, $value, $origin, $heading, $message, $dealers, $label = '' ) {
 		if ( is_array( $origin ) && isset( $origin['lat'], $origin['lng'] ) ) {
 			$origin = array(
 				'lat' => (float) $origin['lat'],
@@ -997,12 +1054,19 @@ class LOW_DL_REST {
 			$unit = 'mi';
 		}
 
+		$query = array(
+			'type'  => $type,
+			'value' => $value,
+		);
+		$label = trim( (string) $label );
+
+		if ( '' !== $label ) {
+			$query['label'] = $label;
+		}
+
 		return array(
 			'mode'    => $mode,
-			'query'   => array(
-				'type'  => $type,
-				'value' => $value,
-			),
+			'query'   => $query,
 			'origin'  => $origin,
 			'unit'    => $unit,
 			'heading' => (string) $heading,

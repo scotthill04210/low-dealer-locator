@@ -22,11 +22,23 @@ class LOW_DL_Service_Area {
 	private static $count = 0;
 
 	/**
+	 * Whether this request already printed the assets directly.
+	 *
+	 * @var bool
+	 */
+	private static $assets_printed = false;
+
+	/**
 	 * Register the shortcode, assets, and save handler.
+	 *
+	 * The shortcode is registered immediately so another plugin can call
+	 * do_shortcode() after this plugin has loaded.
 	 */
 	public function __construct() {
+		self::register_shortcode();
 		add_action( 'init', array( __CLASS__, 'register_shortcode' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_action( 'admin_post_low_dl_save_service_area', array( $this, 'handle_save' ) );
 	}
 
@@ -64,13 +76,14 @@ class LOW_DL_Service_Area {
 	/**
 	 * Shortcode callback.
 	 *
-	 * @param mixed $atts Shortcode attributes. None are used.
+	 * id or post_id selects the dealer when another plugin renders the shortcode
+	 * away from that dealer's page. With neither, the current dealer post is used.
+	 *
+	 * @param mixed $atts Shortcode attributes.
 	 * @return string
 	 */
 	public static function shortcode( $atts ) {
-		unset( $atts );
-
-		$post = get_post();
+		$post = self::dealer_from_atts( $atts );
 
 		if ( ! ( $post instanceof WP_Post ) ) {
 			return '';
@@ -78,7 +91,7 @@ class LOW_DL_Service_Area {
 
 		if ( ! in_array( $post->post_type, LOW_DL_Settings::get_dealer_post_types(), true ) ) {
 			if ( is_user_logged_in() && current_user_can( 'edit_post', $post->ID ) ) {
-				return '<p class="low-dl-area-note">' . esc_html__( 'Dealer Service Area belongs on a dealer.', 'low-dealer-locator' ) . '</p>';
+				return '<p class="low-dl-area-note">' . esc_html__( 'Dealer Service Area belongs on a dealer. Pass that dealer’s id when another plugin shows this shortcode.', 'low-dealer-locator' ) . '</p>';
 			}
 
 			return '';
@@ -88,9 +101,8 @@ class LOW_DL_Service_Area {
 			return '';
 		}
 
-		self::register_assets();
-		wp_enqueue_style( 'low-dl-service-area' );
-		wp_enqueue_script( 'low-dl-service-area' );
+		$assets = self::asset_tags();
+		$return = self::form_return_url( $post->ID );
 
 		++self::$count;
 
@@ -133,6 +145,7 @@ class LOW_DL_Service_Area {
 				<form class="low-dl-area-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<input type="hidden" name="action" value="low_dl_save_service_area" />
 					<input type="hidden" name="low_dl_service_post" value="<?php echo esc_attr( (string) $post->ID ); ?>" />
+					<input type="hidden" name="low_dl_service_return" value="<?php echo esc_attr( $return ); ?>" />
 					<?php wp_nonce_field( 'low_dl_save_service_area_' . $post->ID, 'low_dl_service_area_nonce' ); ?>
 					<div class="low-dl-area-fields">
 						<h2 id="<?php echo esc_attr( $dialog ); ?>-title">
@@ -240,6 +253,7 @@ class LOW_DL_Service_Area {
 				</form>
 			</dialog>
 		</div>
+		<?php echo $assets; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- asset_tags() escapes the URLs. ?>
 		<?php
 
 		$html = ob_get_clean();
@@ -248,7 +262,7 @@ class LOW_DL_Service_Area {
 	}
 
 	/**
-	 * Save the posted service area and return to the dealer.
+	 * Save the posted service area and return to the page that showed the form.
 	 *
 	 * @return void
 	 */
@@ -282,14 +296,196 @@ class LOW_DL_Service_Area {
 			delete_transient( self::invalid_key( $post_id ) );
 		}
 
-		$url = get_permalink( $post_id );
+		$fallback = get_permalink( $post_id );
 
-		if ( ! is_string( $url ) || '' === $url ) {
-			$url = home_url( '/' );
+		if ( ! is_string( $fallback ) || '' === $fallback ) {
+			$fallback = home_url( '/' );
 		}
+
+		$posted = isset( $_POST['low_dl_service_return'] ) ? wp_unslash( $_POST['low_dl_service_return'] ) : '';
+		$return = is_string( $posted ) ? $posted : '';
+		$url    = wp_validate_redirect( $return, $fallback );
 
 		wp_safe_redirect( add_query_arg( 'low_dl_area', 'saved', $url ) );
 		exit;
+	}
+
+	/**
+	 * Dealer selected by the shortcode, a filter, or the post being viewed.
+	 *
+	 * @param mixed $atts Shortcode attributes.
+	 * @return WP_Post|null
+	 */
+	private static function dealer_from_atts( $atts ) {
+		if ( ! is_array( $atts ) ) {
+			$atts = array();
+		}
+
+		$atts = shortcode_atts(
+			array(
+				'id'      => '',
+				'post_id' => '',
+			),
+			$atts,
+			'low_dealer_service_area'
+		);
+
+		$requested = absint( $atts['id'] );
+
+		if ( $requested < 1 ) {
+			$requested = absint( $atts['post_id'] );
+		}
+
+		/**
+		 * Filters the dealer edited by [low_dealer_service_area].
+		 *
+		 * Another plugin can return a dealer ID when it renders the shortcode
+		 * away from that dealer's page. Return 0 to keep the attribute or the
+		 * current post.
+		 *
+		 * @param int   $post_id Dealer ID from the shortcode, or 0.
+		 * @param array $atts    Shortcode attributes.
+		 */
+		$filtered = apply_filters( 'low_dl_service_area_post_id', $requested, $atts );
+		$post_id  = is_scalar( $filtered ) ? absint( $filtered ) : 0;
+
+		if ( $post_id < 1 ) {
+			$post_id = $requested;
+		}
+
+		if ( $post_id > 0 ) {
+			$post = get_post( $post_id );
+
+			return ( $post instanceof WP_Post ) ? $post : null;
+		}
+
+		$post = get_post();
+
+		if ( $post instanceof WP_Post && self::is_dealer( $post ) ) {
+			return $post;
+		}
+
+		$queried = get_queried_object();
+
+		if ( $queried instanceof WP_Post && self::is_dealer( $queried ) ) {
+			return $queried;
+		}
+
+		return ( $post instanceof WP_Post ) ? $post : null;
+	}
+
+	/**
+	 * Whether this post is one of the selected dealer post types.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return bool
+	 */
+	private static function is_dealer( WP_Post $post ) {
+		return in_array( $post->post_type, LOW_DL_Settings::get_dealer_post_types(), true );
+	}
+
+	/**
+	 * Page that should receive the editor after a save.
+	 *
+	 * The current request is used, except WordPress process URLs such as
+	 * admin-ajax.php. Another plugin can replace it with the filter.
+	 *
+	 * @param int $post_id Dealer ID.
+	 * @return string
+	 */
+	private static function form_return_url( $post_id ) {
+		$fallback = get_permalink( $post_id );
+
+		if ( ! is_string( $fallback ) || '' === $fallback ) {
+			$fallback = home_url( '/' );
+		}
+
+		$candidate = self::request_url();
+
+		if ( self::is_process_url( $candidate ) ) {
+			$candidate = $fallback;
+		}
+
+		/**
+		 * Filters the URL the service area form returns to after saving.
+		 *
+		 * @param string $url     Return URL.
+		 * @param int    $post_id Dealer ID.
+		 */
+		$filtered = apply_filters( 'low_dl_service_area_return_url', $candidate, (int) $post_id );
+
+		if ( ! is_string( $filtered ) || '' === $filtered ) {
+			$filtered = $fallback;
+		}
+
+		return wp_validate_redirect( $filtered, $fallback );
+	}
+
+	/**
+	 * URL of this request, without a previous saved flag.
+	 *
+	 * @return string
+	 */
+	private static function request_url() {
+		$host = isset( $_SERVER['HTTP_HOST'] ) ? wp_unslash( $_SERVER['HTTP_HOST'] ) : '';
+		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+
+		if ( ! is_string( $host ) || '' === $host || ! is_string( $uri ) || '' === $uri ) {
+			return '';
+		}
+
+		$url = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
+
+		return remove_query_arg( 'low_dl_area', $url );
+	}
+
+	/**
+	 * Whether this URL is a WordPress endpoint rather than a page.
+	 *
+	 * @param string $url URL.
+	 * @return bool
+	 */
+	private static function is_process_url( $url ) {
+		if ( ! is_string( $url ) || '' === $url ) {
+			return true;
+		}
+
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+
+		if ( ! is_string( $path ) ) {
+			return true;
+		}
+
+		return 1 === preg_match( '#/(admin-ajax|admin-post|wp-cron)\.php$#', $path );
+	}
+
+	/**
+	 * Enqueue the form assets, or print them when the footer has already run.
+	 *
+	 * @return string Markup to print with the form. Empty when assets were queued.
+	 */
+	private static function asset_tags() {
+		self::register_assets();
+
+		$late = wp_doing_ajax() || did_action( 'wp_footer' ) || did_action( 'admin_print_footer_scripts' );
+
+		if ( ! $late ) {
+			wp_enqueue_style( 'low-dl-service-area' );
+			wp_enqueue_script( 'low-dl-service-area' );
+
+			return '';
+		}
+
+		if ( self::$assets_printed ) {
+			return '';
+		}
+
+		self::$assets_printed = true;
+
+		$style  = add_query_arg( 'ver', LOW_DL_VERSION, LOW_DL_URL . 'assets/css/service-area.css' );
+		$script = add_query_arg( 'ver', LOW_DL_VERSION, LOW_DL_URL . 'assets/js/service-area.js' );
+
+		return '<link rel="stylesheet" href="' . esc_url( $style ) . '" />' . '<script src="' . esc_url( $script ) . '"></script>';
 	}
 
 	/**

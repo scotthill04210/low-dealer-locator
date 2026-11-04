@@ -31,6 +31,7 @@ class LOW_DL_Settings {
 		'nearest_count',
 		'max_distance',
 		'distance_unit',
+		'location_service_area',
 		'heading_covered',
 		'heading_fallback',
 		'heading_nearest',
@@ -76,6 +77,7 @@ class LOW_DL_Settings {
 			'nearest_count'            => 5,
 			'max_distance'             => 0,
 			'distance_unit'            => 'mi',
+			'location_service_area'    => 1,
 			'heading_covered'          => '',
 			'heading_fallback'         => '',
 			'heading_nearest'          => '',
@@ -468,10 +470,13 @@ class LOW_DL_Settings {
 			}
 		}
 
+		$service_area = ( isset( $input['location_service_area'] ) && is_scalar( $input['location_service_area'] ) && '1' === (string) wp_unslash( $input['location_service_area'] ) ) ? 1 : 0;
+
 		$clean = array(
-			'nearest_count' => $count,
-			'max_distance'  => $distance,
-			'distance_unit' => $unit,
+			'nearest_count'          => $count,
+			'max_distance'           => $distance,
+			'distance_unit'          => $unit,
+			'location_service_area'  => $service_area,
 		);
 
 		foreach ( array( 'heading_covered', 'heading_fallback', 'heading_nearest', 'empty_text' ) as $key ) {
@@ -1057,6 +1062,23 @@ class LOW_DL_Settings {
 					</select>
 				</td>
 			</tr>
+			<tr>
+				<th scope="row"><?php echo esc_html__( 'Use my location', 'low-dealer-locator' ); ?></th>
+				<td>
+					<input type="hidden" name="<?php echo esc_attr( $name ); ?>[location_service_area]" value="0" />
+					<label for="low-dl-location-service-area">
+						<input
+							type="checkbox"
+							id="low-dl-location-service-area"
+							name="<?php echo esc_attr( $name ); ?>[location_service_area]"
+							value="1"
+							<?php checked( (int) self::get( 'location_service_area' ), 1 ); ?>
+						/>
+						<?php echo esc_html__( 'Match zip codes and states', 'low-dealer-locator' ); ?>
+					</label>
+					<p class="description"><?php echo esc_html__( 'On, the button looks up the visitor’s zip and state. A dealer matches a listed zip, a checked state, or a radius from the visitor’s exact location. Off, the button matches only a radius, then the closest dealers. Turn this off to restore the previous Use my location behavior.', 'low-dealer-locator' ); ?></p>
+				</td>
+			</tr>
 			<?php foreach ( $labels as $key => $label ) : ?>
 				<?php
 				$saved = self::get( $key );
@@ -1384,9 +1406,10 @@ class LOW_DL_Settings {
 				?>
 			</p>
 			<ul>
-				<li><?php echo esc_html__( 'Number of nearest dealers, from 1 to 50. The default is 5. The locator also lets a visitor choose 5, 10, 25, or 50.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Number of nearest dealers, from 1 to 50. The default is 5. The locator also lets a visitor choose 5, 10, 25, or 50. Changing Show updates the current search.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Maximum distance. 0 means no limit.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Distance unit: miles or kilometers.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Use my location matches zip codes and states. Leave it checked to try that behavior. Uncheck it to match only a radius, then the closest dealers.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Headings and the empty-state message. A blank field uses the placeholder text.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Map height in pixels, from 200 to 1200. The default is 450.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Dealer marker: a colored circle, the standard map pin, or one uploaded image. OpenStreetMap does not publish other marker icons. Marker color applies to the circle. Image size is the longest side in pixels, from 16 to 128. The default is 48. Until an image is chosen, dealer pins stay circles.', 'low-dealer-locator' ); ?></li>
@@ -1408,13 +1431,15 @@ class LOW_DL_Settings {
 			<p><?php echo esc_html__( 'Put this shortcode in the content of a dealer:', 'low-dealer-locator' ); ?></p>
 			<ul>
 				<li><code>[low_dealer_service_area]</code></li>
+				<li><code>[low_dealer_service_area id="123"]</code></li>
 			</ul>
-			<p><?php echo esc_html__( 'A logged-in person who can edit that dealer sees a Dealer Service Area button. The button opens the radius, states, and zip codes for that dealer. Save service area stores them with the same rules as the Service area box in the dealer editor. Visitors who cannot edit the dealer do not see the button. On any other post, an editor sees a note that the shortcode belongs on a dealer.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'A logged-in person who can edit that dealer sees a Dealer Service Area button. The button opens the radius, states, and zip codes for that dealer. Save service area stores them with the same rules as the Service area box in the dealer editor. Visitors who cannot edit the dealer do not see the button.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Another plugin can show the same shortcode. Pass id (or post_id) when the page being viewed is not the dealer. do_shortcode() works after this plugin has loaded. After saving, the editor returns to the page that showed the form. The low_dl_service_area_post_id filter can supply the dealer id, and low_dl_service_area_return_url can supply the return page.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></h2>
-			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A search marks that place and shows a pin for each matching dealer. Hover or click the searched marker to see the zip, address, or coordinates that were searched.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'A dealer who lists the zip, checks that state, or covers the search point with a radius is shown first, under the heading for dealers who serve the area. If none do, the locator shows the nearest dealers that have coordinates. A state matches a zip search, and an address search when the lookup includes a state. Use my location matches a radius, and it does not match a state.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'An address search and Use my location go straight to the nearest dealers. Use my location is available on an https page when the browser allows location. Those coordinates are sent only to this site and are not stored.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. The button puts the place it found in the search field: the zip when that lookup succeeds, otherwise the coordinates. A search marks that place and shows a pin for each matching dealer. Hover or click the searched marker to see the same place.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'A dealer who lists the zip, checks that state, or covers the search point with a radius is shown first, under the heading for dealers who serve the area. If none do, the locator shows the nearest dealers that have coordinates. A state matches a zip search, and an address search when the lookup includes a state. With Use my location matching zip codes and states, that button matches the same way from the visitor’s coordinates. The radius still uses the exact location.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Use my location is available on an https page when the browser allows location. While that Locator option is checked, the coordinates are sent from this server to the geocoder to find the zip and state. They are not stored. If the lookup fails, the button matches the radius and then the closest dealers. Uncheck the option to skip that lookup and restore the previous behavior.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'Hovering a dealer pin shows the dealer name. Clicking a dealer pin opens a popup with the dealer\'s name, address, phone, email, and website. After a search, the popup also shows the distance. A phone, email, or website line appears only when that dealer has one.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'An empty search or a value that is not a 5-digit zip shows a message on the page and does not look anything up. If nothing is within the maximum distance, the empty-state message is shown. The map does not zoom with the mouse wheel until the visitor clicks or focuses the map.', 'low-dealer-locator' ); ?></p>
 
@@ -1434,7 +1459,7 @@ class LOW_DL_Settings {
 
 			<h2 id="low-dl-docs-privacy"><?php echo esc_html__( 'Map and address privacy', 'low-dealer-locator' ); ?></h2>
 			<p><?php echo esc_html__( 'Each visitor\'s browser requests map tiles from the tile server on the Locator tab. The default server is tile.openstreetmap.org. The visitor\'s IP address and the map area are sent there.', 'low-dealer-locator' ); ?></p>
-			<p><?php echo esc_html__( 'Dealer addresses are sent to the geocoder when a dealer is saved. A visitor\'s typed address, and a zip that is not in the bundled US zip table, are sent from this server during a search. The default geocoder is nominatim.openstreetmap.org. Each request includes the site name, the site URL, and the contact email from the Geocoding tab.', 'low-dealer-locator' ); ?></p>
+			<p><?php echo esc_html__( 'Dealer addresses are sent to the geocoder when a dealer is saved. A visitor\'s typed address, a zip that is not in the bundled US zip table, and Use my location coordinates when that Locator option is checked, are sent from this server during a search. The default geocoder is nominatim.openstreetmap.org. Each request includes the site name, the site URL, and the contact email from the Geocoding tab. Those coordinates are not stored.', 'low-dealer-locator' ); ?></p>
 			<p><?php echo esc_html__( 'The plugin does not set cookies. The public OpenStreetMap tile and Nominatim services are for light use. If you change the tile URL or geocoder URL, follow that provider\'s terms.', 'low-dealer-locator' ); ?></p>
 		</div>
 		<?php

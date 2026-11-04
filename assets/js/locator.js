@@ -131,6 +131,9 @@
 		var searchController = null;
 		var searchToken = 0;
 		var resultsShown = false;
+		var lastSearch = null;
+		var countSelect = form.querySelector('select[name="count"]');
+		var locationQuery = '';
 
 		map.invalidateSize();
 
@@ -149,6 +152,21 @@
 			runSearch(parsed);
 		});
 
+		if (countSelect) {
+			countSelect.addEventListener('change', function () {
+				if (!lastSearch) {
+					return;
+				}
+
+				runSearch({
+					type: lastSearch.type,
+					q: lastSearch.q,
+					lat: lastSearch.lat,
+					lng: lastSearch.lng
+				});
+			});
+		}
+
 		if (geoBtn && navigator.geolocation) {
 			geoBtn.removeAttribute('hidden');
 			geoBtn.addEventListener('click', function () {
@@ -159,10 +177,19 @@
 
 				showMessage(text('locating'), false);
 				navigator.geolocation.getCurrentPosition(function (position) {
+					var lat = roundCoord(position.coords.latitude);
+					var lng = roundCoord(position.coords.longitude);
+
+					locationQuery = lat + ', ' + lng;
+
+					if (queryInput) {
+						queryInput.value = locationQuery;
+					}
+
 					runSearch({
 						type: 'coords',
-						lat: roundCoord(position.coords.latitude),
-						lng: roundCoord(position.coords.longitude)
+						lat: lat,
+						lng: lng
 					});
 				}, function () {
 					showMessage(text('location_error'), true);
@@ -239,6 +266,13 @@
 				return;
 			}
 
+			lastSearch = {
+				type: params.type,
+				q: params.q,
+				lat: params.lat,
+				lng: params.lng
+			};
+
 			searchToken += 1;
 			var token = searchToken;
 
@@ -308,6 +342,7 @@
 			var index;
 
 			resultsShown = true;
+			fillLocationField(data);
 
 			if (headingEl) {
 				headingEl.textContent = data && typeof data.heading === 'string' ? data.heading : '';
@@ -377,9 +412,26 @@
 			map.invalidateSize();
 		}
 
+		function fillLocationField(data) {
+			var query = data && data.query ? data.query : null;
+			var label = query && typeof query.label === 'string' ? query.label.trim() : '';
+
+			if (!queryInput || !query || query.type !== 'coords' || !label || queryInput.value !== locationQuery) {
+				return;
+			}
+
+			locationQuery = label;
+			queryInput.value = label;
+		}
+
 		function searchedQueryLabel(data) {
 			var query = data && data.query ? data.query : null;
+			var label = query && typeof query.label === 'string' ? query.label.trim() : '';
 			var value = query && typeof query.value === 'string' ? query.value.trim() : '';
+
+			if (label) {
+				return label;
+			}
 
 			if (value) {
 				return value;

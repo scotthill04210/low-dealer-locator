@@ -262,11 +262,12 @@ class LOW_DL_Geocoder {
 	/**
 	 * Coordinates for a free-text query.
 	 *
-	 * @param string $query    Address or place.
-	 * @param float  $max_wait Longest pause this call may take, in seconds.
+	 * @param string        $query         Address or place.
+	 * @param float         $max_wait      Longest pause this call may take, in seconds.
+	 * @param callable|null $before_remote Runs after a cache miss and before a remote request. Return a WP_Error to stop.
 	 * @return array{lat: float, lng: float}|null|WP_Error
 	 */
-	public static function geocode( string $query, float $max_wait = 3.0 ) {
+	public static function geocode( string $query, float $max_wait = 3.0, $before_remote = null ) {
 		$query = self::normalize_query( $query );
 
 		if ( '' === $query || self::query_length( $query ) > 300 ) {
@@ -285,6 +286,12 @@ class LOW_DL_Geocoder {
 
 		if ( is_array( $cached ) && ! empty( $cached['none'] ) ) {
 			return null;
+		}
+
+		$allowed = self::allow_remote( $before_remote );
+
+		if ( is_wp_error( $allowed ) ) {
+			return $allowed;
 		}
 
 		if ( get_transient( self::BACKOFF_KEY ) ) {
@@ -375,12 +382,13 @@ class LOW_DL_Geocoder {
 	/**
 	 * Coordinates for a zip, from the centroid table or the geocoder.
 	 *
-	 * @param string $zip          Five-digit zip code.
-	 * @param bool   $allow_remote Use the geocoder when the centroid table has no row.
-	 * @param float  $max_wait     Longest pause this call may take, in seconds.
+	 * @param string        $zip           Five-digit zip code.
+	 * @param bool          $allow_remote  Use the geocoder when the centroid table has no row.
+	 * @param float         $max_wait      Longest pause this call may take, in seconds.
+	 * @param callable|null $before_remote Runs after a cache miss and before a remote request.
 	 * @return array{lat: float, lng: float}|null|WP_Error
 	 */
-	public static function zip_to_coords( string $zip, bool $allow_remote = true, float $max_wait = 3.0 ) {
+	public static function zip_to_coords( string $zip, bool $allow_remote = true, float $max_wait = 3.0, $before_remote = null ) {
 		$zip = trim( $zip );
 
 		if ( ! preg_match( '/^\d{5}$/', $zip ) ) {
@@ -400,7 +408,87 @@ class LOW_DL_Geocoder {
 			return null;
 		}
 
-		return self::geocode( $zip . ', USA', (float) $max_wait );
+		return self::geocode( $zip . ', USA', (float) $max_wait, $before_remote );
+	}
+
+	/**
+	 * Zip and state for a coordinate pair, from a Nominatim-style reverse URL.
+	 *
+	 * A geocoder URL that does not end in /search is skipped. A failure returns
+	 * null so the caller can keep searching by radius.
+	 *
+	 * @param float         $lat           Latitude.
+	 * @param float         $lng           Longitude.
+	 * @param float         $max_wait      Longest pause this call may take, in seconds.
+	 * @param callable|null $before_remote Runs after a cache miss and before a remote request. A WP_Error skips the request.
+	 * @return array{zip: string, state: string}|null
+	 */
+	public static function reverse_place( float $lat, float $lng, float $max_wait = 3.0, $before_remote = null ) {
+		$url = self::reverse_url();
+
+		if ( '' === $url || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180 ) {
+			return null;
+		}
+
+		$lat       = round( $lat, 4 );
+		$lng       = round( $lng, 4 );
+		$cache_key = self::CACHE_PREFIX . md5( $url . '|' . $lat . '|' . $lng );
+		$cached    = get_transient( $cache_key );
+
+		if ( is_array( $cached ) && isset( $cached['zip'], $cached['state'] ) && is_string( $cached['zip'] ) && is_string( $cached['state'] ) ) {
+			return array(
+				'zip'   => $cached['zip'],
+				'state' => $cached['state'],
+			);
+		}
+
+		if ( is_array( $cached ) && ! empty( $cached['none'] ) ) {
+			return null;
+		}
+
+		$allowed = self::allow_remote( $before_remote );
+
+		if ( is_wp_error( $allowed ) ) {
+			return null;
+		}
+
+		if ( get_transient( self::BACKOFF_KEY ) ) {
+			return null;
+		}
+
+		$throttle = self::throttle( (float) $max_wait );
+
+		if ( is_wp_error( $throttle ) ) {
+			return null;
+		}
+
+		$response = self::reverse_request( $url, $lat, $lng );
+
+		if ( is_wp_error( $response ) ) {
+			return null;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 429 === $code || 403 === $code ) {
+			set_transient( self::BACKOFF_KEY, 1, 5 * MINUTE_IN_SECONDS );
+			return null;
+		}
+
+		if ( 200 !== $code ) {
+			return null;
+		}
+
+		$parsed = self::parse_place( wp_remote_retrieve_body( $response ) );
+
+		if ( ! is_array( $parsed ) ) {
+			set_transient( $cache_key, array( 'none' => 1 ), self::MISS_TTL );
+			return null;
+		}
+
+		set_transient( $cache_key, $parsed, self::HIT_TTL );
+
+		return $parsed;
 	}
 
 	/**
@@ -552,6 +640,26 @@ class LOW_DL_Geocoder {
 	}
 
 	/**
+	 * Run a gate that applies only when a remote request is about to start.
+	 *
+	 * @param callable|null $before_remote Gate. Return a WP_Error to stop.
+	 * @return true|WP_Error
+	 */
+	private static function allow_remote( $before_remote ) {
+		if ( ! is_callable( $before_remote ) ) {
+			return true;
+		}
+
+		$allowed = call_user_func( $before_remote );
+
+		if ( is_wp_error( $allowed ) ) {
+			return $allowed;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Wait out the remaining gap, or refuse when the wait is too long.
 	 *
 	 * @param float $max_wait Longest pause this call may take, in seconds.
@@ -639,6 +747,142 @@ class LOW_DL_Geocoder {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * GET a reverse-geocode request.
+	 *
+	 * @param string $url Base reverse URL.
+	 * @param float  $lat Latitude, already rounded.
+	 * @param float  $lng Longitude, already rounded.
+	 * @return array|WP_Error
+	 */
+	private static function reverse_request( $url, $lat, $lng ) {
+		$args = array(
+			'lat'            => $lat,
+			'lon'            => $lng,
+			'format'         => 'jsonv2',
+			'addressdetails' => 1,
+			'zoom'           => 18,
+		);
+
+		$countries = self::setting_string( 'geocoder_countries' );
+
+		if ( '' !== $countries ) {
+			$args['countrycodes'] = $countries;
+		}
+
+		$key   = self::setting_string( 'geocoder_key' );
+		$param = self::setting_string( 'geocoder_key_param' );
+
+		if ( '' !== $key && '' !== $param ) {
+			$args[ $param ] = $key;
+		}
+
+		$response = wp_safe_remote_get(
+			add_query_arg( $args, $url ),
+			array(
+				'timeout'     => 10,
+				'redirection' => 2,
+				'headers'     => array(
+					'User-Agent' => self::user_agent(),
+					'Accept'     => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'http_error',
+				__( 'The geocoder did not respond.', 'low-dealer-locator' )
+			);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Reverse URL for a Nominatim-style search URL, or an empty string.
+	 *
+	 * @return string
+	 */
+	private static function reverse_url() {
+		$url = self::setting_string( 'geocoder_url' );
+
+		if ( ! self::is_https_url( $url ) ) {
+			return '';
+		}
+
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+
+		if ( ! is_string( $path ) || 1 !== preg_match( '#/search/?$#', $path ) ) {
+			return '';
+		}
+
+		$reverse = preg_replace( '#/search/?$#', '/reverse', $url );
+
+		return is_string( $reverse ) ? $reverse : '';
+	}
+
+	/**
+	 * Zip and state from a reverse-geocode body.
+	 *
+	 * @param string $body Response body.
+	 * @return array{zip: string, state: string}|null
+	 */
+	private static function parse_place( $body ) {
+		$data = json_decode( $body, true );
+
+		if ( ! is_array( $data ) || isset( $data['error'] ) ) {
+			return null;
+		}
+
+		$result = $data;
+
+		if ( ! isset( $result['address'] ) || ! is_array( $result['address'] ) ) {
+			$first = reset( $data );
+			$result = is_array( $first ) ? $first : array();
+		}
+
+		if ( ! isset( $result['address'] ) || ! is_array( $result['address'] ) ) {
+			return null;
+		}
+
+		$zip   = self::zip_from_result( $result );
+		$state = self::state_from_result( $result );
+
+		if ( '' === $zip && '' === $state ) {
+			return null;
+		}
+
+		return array(
+			'zip'   => $zip,
+			'state' => $state,
+		);
+	}
+
+	/**
+	 * Five-digit ZIP from a Nominatim address, or an empty string.
+	 *
+	 * @param array $result Geocoder result.
+	 * @return string
+	 */
+	private static function zip_from_result( array $result ) {
+		if ( ! isset( $result['address'] ) || ! is_array( $result['address'] ) ) {
+			return '';
+		}
+
+		$postcode = isset( $result['address']['postcode'] ) ? $result['address']['postcode'] : '';
+
+		if ( ! is_string( $postcode ) ) {
+			return '';
+		}
+
+		if ( 1 === preg_match( '/\b(\d{5})(?:-\d{4})?\b/', $postcode, $matches ) ) {
+			return $matches[1];
+		}
+
+		return '';
 	}
 
 	/**
