@@ -1025,6 +1025,7 @@ class LOW_DL_Settings {
 						max="50"
 						step="1"
 					/>
+					<p class="description"><?php echo esc_html__( 'Default number of nearest dealers a search shows. The locator also offers 5, 10, 25, and 50.', 'low-dealer-locator' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -1381,7 +1382,7 @@ class LOW_DL_Settings {
 				?>
 			</p>
 			<ul>
-				<li><?php echo esc_html__( 'Number of nearest dealers, from 1 to 50. The default is 5.', 'low-dealer-locator' ); ?></li>
+				<li><?php echo esc_html__( 'Number of nearest dealers, from 1 to 50. The default is 5. The locator also lets a visitor choose 5, 10, 25, or 50.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Maximum distance. 0 means no limit.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Distance unit: miles or kilometers.', 'low-dealer-locator' ); ?></li>
 				<li><?php echo esc_html__( 'Headings and the empty-state message. A blank field uses the placeholder text.', 'low-dealer-locator' ); ?></li>

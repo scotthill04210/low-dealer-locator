@@ -52,6 +52,25 @@
 	white-space: nowrap;
 }
 
+.low-dl-locator .low-dl-count {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+	white-space: nowrap;
+}
+
+.low-dl-locator .low-dl-form select {
+	font: inherit;
+	line-height: inherit;
+	color: inherit;
+	background: transparent;
+	border: 1px solid currentColor;
+	border-color: color-mix(in srgb, currentColor 35%, transparent);
+	border-radius: 4px;
+	padding: 0.6em 0.7em;
+	margin: 0;
+}
+
 .low-dl-locator input[type="text"],
 .low-dl-locator button {
 	font: inherit;
@@ -72,7 +91,8 @@
 }
 
 .low-dl-locator input[type="text"]:focus-visible,
-.low-dl-locator button:focus-visible {
+.low-dl-locator button:focus-visible,
+.low-dl-locator select:focus-visible {
 	outline: 2px solid var(--low-dl-marker);
 	outline-offset: 2px;
 }

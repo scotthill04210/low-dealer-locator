@@ -223,6 +223,14 @@
 
 		function runSearch(params) {
 			var url;
+			var countSelect = form.querySelector('select[name="count"]');
+			var count = countSelect ? parseInt(countSelect.value, 10) : 5;
+
+			if (!isFinite(count) || count < 1 || count > 50) {
+				count = 5;
+			}
+
+			params.count = count;
 
 			try {
 				url = buildSearchUrl(root.getAttribute('data-search-url') || '', params);
@@ -762,6 +770,10 @@
 
 		url.searchParams.set('type', params.type);
 
+		if (params.count) {
+			url.searchParams.set('count', String(params.count));
+		}
+
 		if (params.type === 'coords') {
 			url.searchParams.set('lat', String(params.lat));
 			url.searchParams.set('lng', String(params.lng));
@@ -832,7 +844,37 @@
 			return '';
 		}
 
-		return String(value).trim();
+		return decodeEntities(String(value).trim());
+	}
+
+	function decodeEntities(value) {
+		return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, function (match, body) {
+			var lower = body.toLowerCase();
+			var named = {
+				amp: '&',
+				quot: '"',
+				apos: "'",
+				lt: '<',
+				gt: '>'
+			};
+
+			if (named[lower]) {
+				return named[lower];
+			}
+
+			if (lower.charAt(0) !== '#') {
+				return match;
+			}
+
+			var hex = lower.charAt(1) === 'x';
+			var number = parseInt(hex ? lower.slice(2) : lower.slice(1), hex ? 16 : 10);
+
+			if (!isFinite(number) || number < 1 || number > 0x10FFFF) {
+				return match;
+			}
+
+			return String.fromCharCode(number);
+		});
 	}
 
 	function joinParts(parts, separator) {

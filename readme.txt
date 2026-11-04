@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.9
+Stable tag: 0.3.10
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -29,7 +29,9 @@ dealers by distance.
 * Serve a public JSON list of published dealers that have a service location.
 * Search by zip, street address, or the visitor's location.
 * Show dealers who serve the search first, then the nearest dealers, with
-  distance in miles or kilometers.
+  distance in miles or kilometers. A visitor can choose 5, 10, 25, or 50
+  nearest dealers.
+* Dealer names show characters such as & instead of HTML codes.
 * Place the locator with a shortcode, a block, or a widget.
 * Hover a dealer pin to see the dealer name. Click a dealer pin to open that
   dealer's name, address, phone, email, and website. Distance is included
@@ -265,6 +267,10 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.10 =
+* Dealer names show characters such as & instead of HTML codes like &#038;.
+* The locator has a Show menu for 5, 10, 25, or 50 nearest dealers.
 
 = 0.3.9 =
 * Hovering or clicking the searched marker shows the zip, address, or coordinates that were searched.

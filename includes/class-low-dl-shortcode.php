@@ -173,6 +173,7 @@ class LOW_DL_Shortcode {
 		$html .= '<input type="text" id="' . esc_attr( $input ) . '" name="q" autocomplete="off" maxlength="200"';
 		$html .= ' placeholder="' . esc_attr( $i18n['search_placeholder'] ) . '" />';
 		$html .= '<button type="submit">' . esc_html( $i18n['search_button'] ) . '</button>';
+		$html .= self::result_count_control( $settings );
 		$html .= '</form>';
 
 		$html .= '<div class="low-dl-message" role="status" aria-live="polite"></div>';
@@ -187,6 +188,41 @@ class LOW_DL_Shortcode {
 
 		$html .= '<noscript>' . esc_html__( 'The dealer locator needs JavaScript. Please enable it to search for dealers.', 'low-dealer-locator' ) . '</noscript>';
 		$html .= '</div>';
+
+		return $html;
+	}
+
+	/**
+	 * Results menu. The Locator setting is selected, and 5, 10, 25, and 50 are always offered.
+	 *
+	 * @param array $settings Saved settings.
+	 * @return string
+	 */
+	private static function result_count_control( $settings ) {
+		$selected = isset( $settings['nearest_count'] ) ? absint( $settings['nearest_count'] ) : 5;
+
+		if ( $selected < 1 || $selected > 50 ) {
+			$selected = 5;
+		}
+
+		$choices = array( 5, 10, 25, 50 );
+
+		if ( ! in_array( $selected, $choices, true ) ) {
+			$choices[] = $selected;
+			sort( $choices, SORT_NUMERIC );
+		}
+
+		$html  = '<label class="low-dl-count">';
+		$html .= '<span>' . esc_html__( 'Show', 'low-dealer-locator' ) . '</span>';
+		$html .= '<select name="count">';
+
+		foreach ( $choices as $choice ) {
+			$html .= '<option value="' . esc_attr( (string) $choice ) . '"' . selected( $selected, $choice, false ) . '>';
+			$html .= esc_html( (string) $choice );
+			$html .= '</option>';
+		}
+
+		$html .= '</select></label>';
 
 		return $html;
 	}

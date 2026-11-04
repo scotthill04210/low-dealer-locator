@@ -210,7 +210,7 @@ class LOW_DL_Field_Mapper {
 
 		return array(
 			'id'      => (int) $post->ID,
-			'name'    => wp_strip_all_tags( get_the_title( $post ) ),
+			'name'    => self::plain_title( $post ),
 			'email'   => self::get_value( $post->ID, 'email' ),
 			'website' => self::get_value( $post->ID, 'website' ),
 			'phone'   => self::get_value( $post->ID, 'phone' ),
@@ -223,6 +223,18 @@ class LOW_DL_Field_Mapper {
 			'lat'     => self::get_value( $post->ID, 'lat' ),
 			'lng'     => self::get_value( $post->ID, 'lng' ),
 		);
+	}
+
+	/**
+	 * Dealer name without HTML tags or entities such as &#038;.
+	 *
+	 * @param WP_Post $post Dealer post.
+	 * @return string
+	 */
+	private static function plain_title( WP_Post $post ) {
+		$title = html_entity_decode( (string) $post->post_title, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+		return trim( wp_strip_all_tags( $title ) );
 	}
 
 	/**

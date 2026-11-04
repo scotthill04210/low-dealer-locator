@@ -81,6 +81,11 @@ class LOW_DL_REST {
 					'lng'  => array(
 						'type' => 'number',
 					),
+					'count' => array(
+						'type'    => 'integer',
+						'minimum' => 1,
+						'maximum' => 50,
+					),
 				),
 			)
 		);
@@ -99,7 +104,7 @@ class LOW_DL_REST {
 			return $this->search_http_response( $validated );
 		}
 
-		return $this->search_http_response( self::search( $validated['type'], $validated['value'] ) );
+		return $this->search_http_response( self::search( $validated['type'], $validated['value'], self::result_count( $request ) ) );
 	}
 
 	/**
@@ -376,9 +381,10 @@ class LOW_DL_REST {
 	 *
 	 * @param string $type  zip, address, or coords.
 	 * @param string $value Validated query value.
+	 * @param int    $count Requested number of nearest dealers, or 0 to use the setting.
 	 * @return array|WP_Error
 	 */
-	public static function search( $type, $value ) {
+	public static function search( $type, $value, $count = 0 ) {
 		$dealers = self::get_dealers();
 		$type    = (string) $type;
 		$value   = (string) $value;
@@ -438,7 +444,7 @@ class LOW_DL_REST {
 			);
 		}
 
-		$nearest = self::nearest_dealers( $dealers, $origin );
+		$nearest = self::nearest_dealers( $dealers, $origin, $count );
 
 		if ( empty( $nearest ) ) {
 			$heading = '';
@@ -761,18 +767,56 @@ class LOW_DL_REST {
 	}
 
 	/**
+	 * Requested result count from 1 to 50, or 0 when the request does not choose one.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return int
+	 */
+	private static function result_count( $request ) {
+		$count = 0;
+
+		if ( $request instanceof WP_REST_Request ) {
+			$count = absint( $request->get_param( 'count' ) );
+		}
+
+		return self::limit_result_count( $count );
+	}
+
+	/**
+	 * Keep a result count inside 1 to 50. Anything else returns 0.
+	 *
+	 * @param int $count Requested count.
+	 * @return int
+	 */
+	private static function limit_result_count( $count ) {
+		$count = absint( $count );
+
+		if ( $count < 1 || $count > 50 ) {
+			return 0;
+		}
+
+		return $count;
+	}
+
+	/**
 	 * Nearest dealers that have coordinates.
 	 *
 	 * @param array $dealers Cached dealers.
 	 * @param array $origin  Origin lat and lng.
+	 * @param int   $count   Requested number of dealers, or 0 to use the setting.
 	 * @return array
 	 */
-	private static function nearest_dealers( $dealers, $origin ) {
+	private static function nearest_dealers( $dealers, $origin, $count = 0 ) {
 		$settings = LOW_DL_Settings::get_all();
 		$unit     = ( isset( $settings['distance_unit'] ) && 'km' === $settings['distance_unit'] ) ? 'km' : 'mi';
-		$count    = isset( $settings['nearest_count'] ) ? absint( $settings['nearest_count'] ) : 5;
+		$count    = self::limit_result_count( $count );
 
-		if ( $count < 1 || $count > 50 ) {
+		if ( $count < 1 ) {
+			$count = isset( $settings['nearest_count'] ) ? absint( $settings['nearest_count'] ) : 5;
+			$count = self::limit_result_count( $count );
+		}
+
+		if ( $count < 1 ) {
 			$count = 5;
 		}
 
