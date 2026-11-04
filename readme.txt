@@ -3,7 +3,7 @@ Contributors: TODO_FILL_IN
 Tags: dealer locator, store locator, zip code, map, leaflet
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.3.11
+Stable tag: 0.3.12
 License: TODO_FILL_IN
 License URI: TODO_FILL_IN
 
@@ -34,6 +34,9 @@ dealers by distance.
   nearest dealers.
 * Dealer names show characters such as & instead of HTML codes.
 * Place the locator with a shortcode, a block, or a widget.
+* On a dealer, [low_dealer_service_area] shows a Dealer Service Area button to
+  people who can edit that dealer. The button opens radius, states, and zip
+  codes.
 * Hover a dealer pin to see the dealer name. Click a dealer pin to open that
   dealer's name, address, phone, email, and website. Distance is included
   after a search.
@@ -56,6 +59,9 @@ dealers by distance.
    codes, or any combination. Zip codes can also be imported on the Import tab.
 4. Add the locator with the shortcode `[low_dealer_locator]`, the Dealer
    Locator block, or the Dealer Locator widget.
+5. Optional. Put `[low_dealer_service_area]` in a dealer's content. People who
+   can edit that dealer then get a Dealer Service Area button for the radius,
+   states, and zip codes.
 
 == Frequently Asked Questions ==
 
@@ -71,6 +77,9 @@ these apply:
   when the lookup includes one. Use my location matches a radius and does not
   match a state. Canadian provinces are not available.
 * The zip is in the dealer's zip list.
+
+The same fields are available on the front end with `[low_dealer_service_area]`.
+See "How do I edit a service area on the front end?" below.
 
 A dealer can use one of these or more than one. The zip list and a checked
 state still match when the dealer has no map coordinates.
@@ -168,12 +177,27 @@ the dealer has none. `service_states` is a list of USPS abbreviations.
 
 = What shortcode options are there? =
 
+`[low_dealer_locator]`
+
 `[low_dealer_locator height="600" zoom="10"]`
+
+`[low_dealer_service_area]`
 
 `height` is the map height in pixels, from 200 to 1200. `zoom` is the default
 zoom, from 1 to 18. Leave either one out, or pass a value outside that range,
 and the locator uses the map height and default zoom from the Locator tab.
 The Dealer Locator block and widget accept the same two values.
+
+`[low_dealer_service_area]` has no options.
+
+= How do I edit a service area on the front end? =
+
+Put `[low_dealer_service_area]` in the content of a dealer. A logged-in person
+who can edit that dealer sees a Dealer Service Area button. The button opens
+the radius, states, and zip codes for that dealer. Save service area stores
+them with the same rules as the Service area box in the dealer editor.
+Visitors who cannot edit the dealer do not see the button. On any other post,
+an editor sees a note that the shortcode belongs on a dealer.
 
 = How do plugin updates work? =
 
@@ -275,6 +299,10 @@ ZCTAs approximate zip codes and do not cover every USPS zip code. A zip that
 is not in the table is looked up through Nominatim.
 
 == Changelog ==
+
+= 0.3.12 =
+* [low_dealer_service_area] on a dealer shows a Dealer Service Area button to people who can edit that dealer.
+* The button opens the radius, states, and zip codes for that dealer.
 
 = 0.3.11 =
 * Field Mapping can read a one-line full address, such as 7617 Duncan Bridge Rd. Cleveland, GA 30528.

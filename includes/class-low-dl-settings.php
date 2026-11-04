@@ -1261,6 +1261,7 @@ class LOW_DL_Settings {
 				<li><a href="#low-dl-docs-geo"><?php echo esc_html__( 'Look up coordinates', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-locator"><?php echo esc_html__( 'Set how the locator behaves', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-place"><?php echo esc_html__( 'Place the locator on a page', 'low-dealer-locator' ); ?></a></li>
+				<li><a href="#low-dl-docs-service-area"><?php echo esc_html__( 'Edit a service area on the front end', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-json"><?php echo esc_html__( 'Dealer list address', 'low-dealer-locator' ); ?></a></li>
 				<li><a href="#low-dl-docs-update"><?php echo esc_html__( 'Install an update', 'low-dealer-locator' ); ?></a></li>
@@ -1402,6 +1403,13 @@ class LOW_DL_Settings {
 				<li><code>[low_dealer_locator height="600" zoom="10"]</code></li>
 			</ul>
 			<p><?php echo esc_html__( 'Height is 200 to 1200 pixels. Zoom is 1 to 18. A missing or out-of-range value uses the Locator tab. The Dealer Locator block and the Dealer Locator widget accept the same height and zoom. Leave them blank to use the Locator tab.', 'low-dealer-locator' ); ?></p>
+
+			<h2 id="low-dl-docs-service-area"><?php echo esc_html__( 'Edit a service area on the front end', 'low-dealer-locator' ); ?></h2>
+			<p><?php echo esc_html__( 'Put this shortcode in the content of a dealer:', 'low-dealer-locator' ); ?></p>
+			<ul>
+				<li><code>[low_dealer_service_area]</code></li>
+			</ul>
+			<p><?php echo esc_html__( 'A logged-in person who can edit that dealer sees a Dealer Service Area button. The button opens the radius, states, and zip codes for that dealer. Save service area stores them with the same rules as the Service area box in the dealer editor. Visitors who cannot edit the dealer do not see the button. On any other post, an editor sees a note that the shortcode belongs on a dealer.', 'low-dealer-locator' ); ?></p>
 
 			<h2 id="low-dl-docs-visitor"><?php echo esc_html__( 'What a visitor sees', 'low-dealer-locator' ); ?></h2>
 			<p><?php echo esc_html__( 'The visitor can search by a 5-digit zip, a street address, or Use my location. Use my location is the button on the left of the search field. A search marks that place and shows a pin for each matching dealer. Hover or click the searched marker to see the zip, address, or coordinates that were searched.', 'low-dealer-locator' ); ?></p>

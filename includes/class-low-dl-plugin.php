@@ -50,6 +50,7 @@ class LOW_DL_Plugin {
 		new LOW_DL_Centroid_Table();
 		new LOW_DL_Geo_Queue();
 		new LOW_DL_Shortcode();
+		new LOW_DL_Service_Area();
 		new LOW_DL_Block();
 		new LOW_DL_Widget();
 		new LOW_DL_Updater();
@@ -74,6 +75,7 @@ class LOW_DL_Plugin {
 		require_once LOW_DL_PATH . 'includes/class-low-dl-geocoder.php';
 		require_once LOW_DL_PATH . 'includes/class-low-dl-geo-queue.php';
 		require_once LOW_DL_PATH . 'includes/class-low-dl-shortcode.php';
+		require_once LOW_DL_PATH . 'includes/class-low-dl-service-area.php';
 		require_once LOW_DL_PATH . 'includes/class-low-dl-block.php';
 		require_once LOW_DL_PATH . 'includes/class-low-dl-widget.php';
 		require_once LOW_DL_PATH . 'includes/class-low-dl-updater.php';

@@ -1,0 +1,139 @@
+/* Service area form. Every rule stays under .low-dl-area. */
+
+.low-dl-area {
+	font: inherit;
+	color: inherit;
+	box-sizing: border-box;
+}
+
+.low-dl-area *,
+.low-dl-area *::before,
+.low-dl-area *::after {
+	box-sizing: border-box;
+}
+
+.low-dl-area-note,
+.low-dl-area-status,
+.low-dl-area-warning {
+	margin: 0 0 0.75em;
+}
+
+.low-dl-area-warning {
+	color: #8a2424;
+}
+
+.low-dl-area-open,
+.low-dl-area-form button {
+	font: inherit;
+	line-height: inherit;
+	color: inherit;
+	background: transparent;
+	border: 1px solid currentColor;
+	border-color: color-mix(in srgb, currentColor 35%, transparent);
+	border-radius: 4px;
+	padding: 0.6em 0.9em;
+	cursor: pointer;
+}
+
+.low-dl-area-open {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45em;
+}
+
+.low-dl-area-dialog {
+	width: min(40rem, calc(100vw - 2rem));
+	max-height: calc(100vh - 2rem);
+	margin: auto;
+	padding: 0;
+	color: #1d2327;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 8px;
+}
+
+.low-dl-area-dialog::backdrop {
+	background: rgba(0, 0, 0, 0.45);
+}
+
+.low-dl-area-form {
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100vh - 2rem);
+	margin: 0;
+}
+
+.low-dl-area-fields {
+	overflow: auto;
+	padding: 1.25rem 1.25rem 0;
+}
+
+.low-dl-area-form h2 {
+	margin: 0 0 0.5rem;
+	font-size: 1.25rem;
+}
+
+.low-dl-area-help,
+.low-dl-area-count {
+	margin: 0.4rem 0 0;
+	color: #50575e;
+	font-size: 0.92rem;
+}
+
+.low-dl-area-radius,
+.low-dl-area-states,
+.low-dl-area-zips {
+	margin: 1rem 0 0;
+}
+
+.low-dl-area-radius label,
+.low-dl-area-zips label,
+.low-dl-area-states legend {
+	display: block;
+	font-weight: 600;
+	padding: 0;
+}
+
+.low-dl-area-states {
+	padding: 0;
+	border: 0;
+	min-inline-size: 0;
+}
+
+.low-dl-area-radius input {
+	width: 8em;
+	margin-top: 0.35rem;
+	font: inherit;
+	padding: 0.4em 0.5em;
+}
+
+.low-dl-area-state-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+	gap: 0.15rem 0.75rem;
+	max-height: 14rem;
+	margin-top: 0.5rem;
+	overflow: auto;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+}
+
+.low-dl-area-state-list label {
+	display: block;
+	font-weight: 400;
+}
+
+.low-dl-area-zips textarea {
+	width: 100%;
+	min-height: 8rem;
+	margin-top: 0.35rem;
+	font: inherit;
+	padding: 0.5em;
+}
+
+.low-dl-area-actions {
+	display: flex;
+	gap: 0.5rem;
+	padding: 1rem 1.25rem 1.25rem;
+}

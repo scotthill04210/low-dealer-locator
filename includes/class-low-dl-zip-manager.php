@@ -459,11 +459,33 @@ class LOW_DL_Zip_Manager {
 	}
 
 	/**
+	 * Save radius, states, and zip codes from a service-area form.
+	 *
+	 * Zip codes that are not valid are left out of storage and returned.
+	 * Radius and states use the same rules as the dealer editor.
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param mixed  $radius  Posted radius in the site distance unit.
+	 * @param mixed  $states  Posted state abbreviations.
+	 * @param string $zip_raw Posted zip text.
+	 * @return string[] Rejected zip tokens.
+	 */
+	public static function save_service_area( $post_id, $radius, $states, $zip_raw ) {
+		$parsed = self::parse( is_string( $zip_raw ) ? $zip_raw : '' );
+
+		self::set_zips( (int) $post_id, $parsed['valid'] );
+		self::set_radius( (int) $post_id, $radius );
+		self::set_states( (int) $post_id, $states );
+
+		return $parsed['invalid'];
+	}
+
+	/**
 	 * Locator distance unit.
 	 *
 	 * @return string mi or km.
 	 */
-	private static function distance_unit() {
+	public static function distance_unit() {
 		$unit = LOW_DL_Settings::get( 'distance_unit' );
 
 		return 'km' === $unit ? 'km' : 'mi';
